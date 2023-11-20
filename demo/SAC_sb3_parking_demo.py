@@ -27,7 +27,7 @@ env.reset()
 
 
 model = SAC("MultiInputPolicy", env, verbose=1)
-model.learn(total_timesteps=10000, log_interval=10)
+model.learn(total_timesteps=20000, log_interval=10)
 model.save("SAC_parking")
 vec_env = model.get_env()
 

@@ -3,14 +3,13 @@ import numpy as np
 
 from stable_baselines3 import SAC
 from stable_baselines3.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
-
-env = gym.make("racetrack-v0", render_mode="rgb_array")
+env = gym.make("highway-v0", render_mode="rgb_array")
 
 env.configure({
     "observation": {
         "type": "OccupancyGrid",
         "vehicles_count": 15,
-        "features": ["presence","on_road", "x", "y", "vx", "vy", "cos_h", "sin_h"],
+        "features": ["presence", "on_road","x", "y", "vx", "vy", "cos_h", "sin_h"],
         "features_range": {
             "x": [-100, 100],
             "y": [-100, 100],
@@ -23,25 +22,30 @@ env.configure({
     },
     "action": {
         "type": "ContinuousAction",
-        "longitudinal": False,
+        "longitudinal": True,
         "lateral": True,
     },
 
-    "duration": 30,  # [s]
+    "duration": 40,  # [s]
     "simulation_frequency": 15,  # [Hz]
     "policy_frequency": 1,  # [Hz]
 })
 env.reset()
 
-# model = SAC("MultiInputPolicy", env, verbose=1)
-model = SAC('MlpPolicy', env, verbose=1)
+
+model = SAC("MlpPolicy", env, verbose=1,
+            tensorboard_log="logs", 
+            buffer_size=int(1e6),
+            learning_rate=1e-3,
+            gamma=0.95, batch_size=1024)
+
 model.learn(total_timesteps=30000, log_interval=10)
-model.save("SAC_racetrack")
+model.save("SAC_highway")
 vec_env = model.get_env()
 
-del model # remove to demonstrate saving and loading
+# del model # remove to demonstrate saving and loading
 
-model = SAC.load("SAC_racetrack")
+# model = SAC.load("SAC_highway")
 
 obs = vec_env.reset()
 while True:

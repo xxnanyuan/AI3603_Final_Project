@@ -118,6 +118,7 @@ I decide to choose TD3 for a test. TD3 is original implementation. TD3v1 and Td3
 2. [highwayEnv code](https://github.com/Farama-Foundation/HighwayEnv)
 3. [clearn rl -- a Deep Reinforcement Learning library](https://github.com/vwxyzjn/cleanrl/tree/master)
 4. [highway by RainbowDQN -- A improved dqn algorithm](https://github.com/jackyoung96/RainbowDQN_highway) [^1]
+5. [深度强化学习算法对比](https://zhuanlan.zhihu.com/p/342919579?utm_psn=1708635222873296896)
 
 ### Paper
 
