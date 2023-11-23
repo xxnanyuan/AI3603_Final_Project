@@ -40,7 +40,7 @@ def parse_args():
     # Algorithm specific arguments
     parser.add_argument("--env-id", type=str, default="Hopper-v4",
         help="the id of the environment")
-    parser.add_argument("--total-timesteps", type=int, default=1000000,
+    parser.add_argument("--total-timesteps", type=int, default=500,
         help="total timesteps of the experiments")
 
     parser.add_argument("--buffer-size", type=int, default=int(1e6),
@@ -49,9 +49,9 @@ def parse_args():
         help="the discount factor gamma")
     parser.add_argument("--tau", type=float, default=0.005,
         help="target smoothing coefficient (default: 0.005)")
-    parser.add_argument("--batch-size", type=int, default=256,
+    parser.add_argument("--batch-size", type=int, default=48,
         help="the batch size of sample from the reply memory")
-    parser.add_argument("--learning-starts", type=int, default=5e3,
+    parser.add_argument("--learning-starts", type=int, default=200,
         help="timestep to start learning")
     parser.add_argument("--policy-lr", type=float, default=3e-4,
         help="the learning rate of the policy network optimizer")
@@ -180,10 +180,10 @@ total_timesteps=1000000, track=False, wandb_entity=None, wandb_project_name='cle
 
 number = 1
 times = time.strftime('%Y-%m-%d %H-%M-%S', time.localtime())
-out_dir = f"train/"
+out_dir = f"train/{times}"
 if not os.path.exists(out_dir):
     os.mkdir(out_dir)
-log_dir = os.path.join(out_dir, f'train{times}.log')
+log_dir = os.path.join(out_dir, 'train.log')
 logger = get_logger(log_dir, name="log", level="info")
 
 
@@ -214,7 +214,7 @@ if args.track:
         save_code=True,
     )
 
-writer = SummaryWriter(os.path.join(out_dir, f"runs/{times}"))
+writer = SummaryWriter(os.path.join(out_dir, f"{run_name}"))
 writer.add_text(
     "hyperparameters",
     "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
@@ -298,8 +298,11 @@ b_values = values.reshape(-1)
 b_obs = obs.reshape(1, np.prod(obs.shape))
 print(type(b_obs))
 
+st = time.time()
+
 for global_step in range(args.total_timesteps):
     # ALGO LOGIC: put action logic here
+    # if global_step % 100 == 0:
     '''learning_starts=5000.0'''
     if global_step < args.learning_starts:
         actions = np.array([envs.single_action_space.sample() for _ in range(envs.num_envs)])
@@ -313,7 +316,8 @@ for global_step in range(args.total_timesteps):
     # TRY NOT TO MODIFY: record rewards for plotting purposes
     if "final_info" in infos:
         for info in infos["final_info"]:
-            logger.info(f"global_step={global_step}, episodic_return={info['episode']['r']}")
+            log_time = time.time()
+            logger.info(f"global_step={global_step}, episodic_return={info['episode']['r']}, time: {int(log_time - st)}")
             writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
             writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
             break
@@ -342,6 +346,11 @@ for global_step in range(args.total_timesteps):
             qf2_next_target = qf2_target(b_observations, next_state_actions)
             min_qf_next_target = torch.min(qf1_next_target, qf2_next_target) - alpha * next_state_log_pi
             next_q_value = data.rewards.flatten() + (1 - data.dones.flatten()) * args.gamma * (min_qf_next_target).view(-1)
+
+        
+        # if global_step % 100 == 0:
+        #     logger.info(f"reward: {np.mean(data.rewards.flatten())}")
+        
 
         qf1_a_values = qf1(b_observations, data.actions).view(-1)
         qf2_a_values = qf2(b_observations, data.actions).view(-1)
@@ -402,13 +411,14 @@ for global_step in range(args.total_timesteps):
         以下是存网络的过程，我只存了pth，到时候要load_dict()    
         '''
         if global_step == args.total_timesteps - 1: 
+            logger.info("saving, plz wait...")
             if args.autotune:
                 alpha_dir = os.path.join(out_dir, "alpha.txt")
                 with open(alpha_dir, 'w') as f:
                     f.write(str(alpha))
             torch.save(qf1.state_dict(), out_dir + "/qf1.pth")
             torch.save(qf2.state_dict(), out_dir + "/qf2.pth")
-            torch.save(actor.state_dict(), out_dir + "actor.pth")
+            torch.save(actor.state_dict(), out_dir + "/actor.pth")
 
 
         '''这个下面都是log的东西，不用看'''
@@ -420,7 +430,7 @@ for global_step in range(args.total_timesteps):
             writer.add_scalar("losses/qf_loss", qf_loss.item() / 2.0, global_step)
             writer.add_scalar("losses/actor_loss", actor_loss.item(), global_step)
             writer.add_scalar("losses/alpha", alpha, global_step)
-            logger.info("SPS:", int(global_step / (time.time() - start_time)))
+            logger.info("SPS:" + str(int(global_step / (time.time() - start_time))))
             writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
             if args.autotune:
                 writer.add_scalar("losses/alpha_loss", alpha_loss.item(), global_step)
