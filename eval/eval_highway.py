@@ -34,7 +34,7 @@ env.reset()
 def act_inference(obs):
     #! Load Your own act_inferece
     action = env.action_space.sample()
-    return action 
+    return action
 
 print(env.action_space,env.observation_space)
 
