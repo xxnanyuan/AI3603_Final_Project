@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     env_name = "racetrack-v0"
     number = 1
-    seed = 0
+    # seed = 0
     env = makeEnv(env_name, args.seed)
     # Set random seed
     np.random.seed(args.seed)
@@ -42,15 +42,15 @@ if __name__ == '__main__':
 
     # device = torch.device("cuda" if torch.cuda.is_available()else "cpu")
     agent = SAC(state_dim, action_dim, max_action, args, logger)
-    replay_buffer = ReplayBuffer(state_dim, action_dim)
+    replay_buffer = ReplayBuffer(state_dim, action_dim, args)
     # Build a tensorboard
-    writer = SummaryWriter(log_dir=os.path.join(out_dir, 'SAC_env_{}_number_{}_seed_{}'.format(env_name, number, seed)))
+    writer = SummaryWriter(log_dir=os.path.join(out_dir, 'SAC_env_{}_number_{}_seed_{}'.format(env_name, number, args.seed)))
 
-    max_train_steps = 5e4  # Maximum number of training steps
-    random_steps = 1  # Take the random actions in the beginning for the better exploration
-    evaluate_freq = 5e2  # Evaluate the policy every 'evaluate_freq' steps
-    evaluate_num = 0  # Record the number of evaluations
-    evaluate_rewards = []  # Record the rewards during the evaluating
+    max_train_steps = args.total_timesteps  # Maximum number of training steps
+    random_steps = args.learning_starts  # Take the random actions in the beginning for the better exploration
+    # evaluate_freq = 5e2  # Evaluate the policy every 'evaluate_freq' steps
+    # evaluate_num = 0  # Record the number of evaluations
+    # evaluate_rewards = []  # Record the rewards during the evaluating
     total_steps = 0  # Record the total steps during the training
     st = time.time()
     total_r = 0
