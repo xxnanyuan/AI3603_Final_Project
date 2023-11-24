@@ -1,5 +1,0 @@
-2023-11-24 17:01:34 [INFO ] env=racetrack-v0
-2023-11-24 17:01:34 [INFO ] state_dim=968
-2023-11-24 17:01:34 [INFO ] action_dim=1
-2023-11-24 17:01:34 [INFO ] max_action=1.0
-2023-11-24 17:01:35 [INFO ] total_steps: 20, episode reward: [0], time_used: 0

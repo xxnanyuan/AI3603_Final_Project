@@ -11,6 +11,11 @@ from utils import get_logger, parse_args
 import time
 import os
 
+def adjustReward(rewards):
+    reward = 10*rewards["lane_centering_reward"]+rewards["action_reward"]-10*rewards["collision_reward"]+10*rewards["on_road_reward"]
+    return reward
+
+
 
 if __name__ == '__main__':
 
@@ -21,7 +26,6 @@ if __name__ == '__main__':
     log_dir = os.path.join(out_dir, 'train.log')
     logger = get_logger(log_dir, name="log", level="info")
     args = parse_args()
-
 
     env_name = "racetrack-v0"
     number = 1
@@ -86,6 +90,10 @@ if __name__ == '__main__':
             6. Observe next state s', reward r, and done signal d to indicate whether s' is terminal
             '''    
             s_, r, done, truncations, infos = env.step(a)
+            r = adjustReward(infos["rewards"])
+            if not infos["rewards"]["on_road_reward"]:
+                done = True
+            # print(infos)
             total_r += r
             s_ = s_.flatten()
             '''6. observe signal d'''
@@ -110,3 +118,4 @@ if __name__ == '__main__':
 
             '''8. If s'is terminal,then d is true, we jump out of the "while" and reset environment state.'''
     
+    agent.save("./models/racetrack")
