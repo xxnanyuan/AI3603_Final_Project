@@ -124,30 +124,31 @@ class SAC(object):
 
         # Compute actor loss
         '''em应该是说每freq次才更新，每次更新都更新freq次，所以是延迟更新，但是更新的次数还是相等的'''
+        
         if total_steps % self.policy_frequency == 0:
             for _ in range(self.policy_frequency):
+                '''从这里开始更新actor'''
                 a, log_pi = self.actor(batch_s)
                 Q1, Q2 = self.critic(batch_s, a)
                 Q = torch.min(Q1, Q2)
                 actor_loss = (self.alpha * log_pi - Q).mean()
-
-                '''从这里开始更新actor'''
                 self.actor_optimizer.zero_grad()
                 actor_loss.backward()
                 self.actor_optimizer.step()
+                # Update alpha
+                if self.adaptive_alpha:
+                    # We learn log_alpha instead of alpha to ensure that alpha=exp(log_alpha)>0
+                    alpha_loss = -(self.log_alpha.exp() * (log_pi + self.target_entropy).detach()).mean()
+                    self.alpha_optimizer.zero_grad()
+                    alpha_loss.backward()
+                    self.alpha_optimizer.step()
+                    self.alpha = self.log_alpha.exp()
 
         # Unfreeze critic networks
         for params in self.critic.parameters():
             params.requires_grad = True
 
-        # Update alpha
-        if self.adaptive_alpha:
-            # We learn log_alpha instead of alpha to ensure that alpha=exp(log_alpha)>0
-            alpha_loss = -(self.log_alpha.exp() * (log_pi + self.target_entropy).detach()).mean()
-            self.alpha_optimizer.zero_grad()
-            alpha_loss.backward()
-            self.alpha_optimizer.step()
-            self.alpha = self.log_alpha.exp()
+        
 
         # Softly update target networks
         if total_steps % self.target_network_frequency == 0:
