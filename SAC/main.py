@@ -11,6 +11,11 @@ from utils import get_logger, parse_args
 import time
 import os
 
+def adjustReward(rewards):
+    reward = 10*rewards["lane_centering_reward"]+rewards["action_reward"]-10*rewards["collision_reward"]+10*rewards["on_road_reward"]
+    return reward
+
+
 
 if __name__ == '__main__':
 
@@ -21,7 +26,6 @@ if __name__ == '__main__':
     log_dir = os.path.join(out_dir, 'train.log')
     logger = get_logger(log_dir, name="log", level="info")
     args = parse_args()
-
 
     env_name = "racetrack-v0"
     number = 1
@@ -47,7 +51,7 @@ if __name__ == '__main__':
     writer = SummaryWriter(log_dir=os.path.join(out_dir, 'SAC_env_{}_number_{}_seed_{}'.format(env_name, number, seed)))
 
     max_train_steps = 5e4  # Maximum number of training steps
-    random_steps = 1e4  # Take the random actions in the beginning for the better exploration
+    random_steps = 0  # Take the random actions in the beginning for the better exploration
     evaluate_freq = 5e2  # Evaluate the policy every 'evaluate_freq' steps
     evaluate_num = 0  # Record the number of evaluations
     evaluate_rewards = []  # Record the rewards during the evaluating
@@ -71,6 +75,10 @@ if __name__ == '__main__':
             else:
                 a = agent.choose_action(s)
             s_, r, done, truncations, infos = env.step(a)
+            r = adjustReward(infos["rewards"])
+            if not infos["rewards"]["on_road_reward"]:
+                done = True
+            # print(infos)
             total_r += r
             s_ = s_.flatten()
             # When dead or win or reaching the max_episode_steps, done will be Ture, we need to distinguish them;
@@ -87,3 +95,4 @@ if __name__ == '__main__':
                 agent.learn(replay_buffer, total_steps=total_steps)
 
             total_steps += 1
+    agent.save("./models/racetrack")

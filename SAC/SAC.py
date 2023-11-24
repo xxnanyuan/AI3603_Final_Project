@@ -123,18 +123,15 @@ class SAC(object):
             params.requires_grad = False
 
         # Compute actor loss
-        '''em应该是说每freq次才更新，每次更新都更新freq次，所以是延迟更新，但是更新的次数还是相等的'''
-        if total_steps % self.policy_frequency == 0:
-            for _ in range(self.policy_frequency):
-                a, log_pi = self.actor(batch_s)
-                Q1, Q2 = self.critic(batch_s, a)
-                Q = torch.min(Q1, Q2)
-                actor_loss = (self.alpha * log_pi - Q).mean()
+        a, log_pi = self.actor(batch_s)
+        Q1, Q2 = self.critic(batch_s, a)
+        Q = torch.min(Q1, Q2)
+        actor_loss = (self.alpha * log_pi - Q).mean()
 
-                '''从这里开始更新actor'''
-                self.actor_optimizer.zero_grad()
-                actor_loss.backward()
-                self.actor_optimizer.step()
+        # Optimize the actor
+        self.actor_optimizer.zero_grad()
+        actor_loss.backward()
+        self.actor_optimizer.step()
 
         # Unfreeze critic networks
         for params in self.critic.parameters():
@@ -150,9 +147,8 @@ class SAC(object):
             self.alpha = self.log_alpha.exp()
 
         # Softly update target networks
-        if total_steps % self.target_network_frequency == 0:
-            for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                target_param.data.copy_(self.TAU * param.data + (1 - self.TAU) * target_param.data)
+        for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+            target_param.data.copy_(self.TAU * param.data + (1 - self.TAU) * target_param.data)
     
     
     def save(self, filename):
@@ -164,9 +160,9 @@ class SAC(object):
 
 
     def load(self, filename):
-        self.critic.load_state_dict(torch.load(filename + "_critic"))
-        self.critic_optimizer.load_state_dict(torch.load(filename + "_critic_optimizer"))
+        self.critic.load_state_dict(torch.load(filename + "_critic.pth"))
+        self.critic_optimizer.load_state_dict(torch.load(filename + "_critic_optimizer.pth"))
         self.critic_target = copy.deepcopy(self.critic)
-        self.actor.load_state_dict(torch.load(filename + "_actor"))
-        self.actor_optimizer.load_state_dict(torch.load(filename + "_actor_optimizer"))
+        self.actor.load_state_dict(torch.load(filename + "_actor.pth"))
+        self.actor_optimizer.load_state_dict(torch.load(filename + "_actor_optimizer.pth"))
         self.actor_target = copy.deepcopy(self.actor)	
