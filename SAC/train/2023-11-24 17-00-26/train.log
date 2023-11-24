@@ -1,4 +1,0 @@
-2023-11-24 17:00:26 [INFO ] env=racetrack-v0
-2023-11-24 17:00:26 [INFO ] state_dim=968
-2023-11-24 17:00:26 [INFO ] action_dim=1
-2023-11-24 17:00:26 [INFO ] max_action=1.0

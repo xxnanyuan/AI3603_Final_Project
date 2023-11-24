@@ -123,17 +123,6 @@ class SAC(object):
             params.requires_grad = False
 
         # Compute actor loss
-<<<<<<< HEAD
-        a, log_pi = self.actor(batch_s)
-        Q1, Q2 = self.critic(batch_s, a)
-        Q = torch.min(Q1, Q2)
-        actor_loss = (self.alpha * log_pi - Q).mean()
-
-        # Optimize the actor
-        self.actor_optimizer.zero_grad()
-        actor_loss.backward()
-        self.actor_optimizer.step()
-=======
         '''em应该是说每freq次才更新，每次更新都更新freq次，所以是延迟更新，但是更新的次数还是相等的'''
         
         if total_steps % self.policy_frequency == 0:
@@ -154,7 +143,6 @@ class SAC(object):
                     alpha_loss.backward()
                     self.alpha_optimizer.step()
                     self.alpha = self.log_alpha.exp()
->>>>>>> 9517c5c003171171df2e1e5efc70d9216963f07d
 
         # Unfreeze critic networks
         for params in self.critic.parameters():
