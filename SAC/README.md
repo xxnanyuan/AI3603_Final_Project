@@ -33,7 +33,7 @@
 
   ----re: 
   1. em我确实也觉得意义不是很大，但这样的话在做priority replayBuffer之前是不是就不能调参🤔，还是说我们先调一版，如果冯奕哲同意做replayBuffer的话，等他做好了我们接着再调一下
-  2. 网络结构的话我看过了，基本上是一样的，除了有一个地方有点区别，见SAC.py line 60，那里直接把第一个网络得到的s_a又通过第二个网络了，我不知道这这样妥不妥，在cleanRL里面，两个网络是完全独立的，应写做q2 = torch.cat([s, a], 1)，等你醒了讨论一下
-  3. 另外，SAC.py 中的 actor 的 forward 函数，相当于把 cleanRL 中的forward 和 get_action 揉进一个函数里面了，但我觉得不需要改，因为 cleanRL 的主函数中本身就只用到了actor.get_action()，而 get_action 又调用 actor(x)，所以只是写法不一样，结构是一样的(note : 在继承了nn.module 以后，调用actor(x) 就相当于 actor.forward(x)，DQN里面遇到过。)
+  2. 网络结构的话我看过了，是一样的，不一样的地方在，SAC.py 中的 actor 的 forward 函数，相当于把 cleanRL 中的forward 和 get_action 揉进一个函数里面了，但我觉得不需要改，因为 cleanRL 的主函数中本身就只用到了actor.get_action()，而 get_action 又调用 actor(x)，所以只是写法不一样，结构是一样的(note : 在继承了nn.module 以后，调用actor(x) 就相当于 actor.forward(x)，DQN里面遇到过。)
+  3. 如果你有发现其它奇怪的地方可以等你醒了告诉我
   4. 输入输出和args我之后加上
      
