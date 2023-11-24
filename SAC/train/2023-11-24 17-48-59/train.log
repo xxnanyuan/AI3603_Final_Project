@@ -1,0 +1,38 @@
+2023-11-24 17:49:00 [INFO ] env=racetrack-v0
+2023-11-24 17:49:00 [INFO ] state_dim=968
+2023-11-24 17:49:00 [INFO ] action_dim=1
+2023-11-24 17:49:00 [INFO ] max_action=1.0
+2023-11-24 17:49:00 [INFO ] total_steps: 30, episode reward: [3.9703813412501097], time_used: 0
+2023-11-24 17:49:01 [INFO ] total_steps: 60, episode reward: [0.48879193161994267], time_used: 0
+2023-11-24 17:49:01 [INFO ] total_steps: 90, episode reward: [2.1751174289913555], time_used: 1
+2023-11-24 17:49:02 [INFO ] total_steps: 120, episode reward: [3.3680178564175893], time_used: 1
+2023-11-24 17:49:02 [INFO ] total_steps: 150, episode reward: [3.8991773381998907], time_used: 2
+2023-11-24 17:49:02 [INFO ] total_steps: 158, episode reward: [0.9720405003073331], time_used: 2
+2023-11-24 17:49:03 [INFO ] total_steps: 188, episode reward: [4.49813410907023], time_used: 2
+2023-11-24 17:49:03 [INFO ] total_steps: 218, episode reward: [1.5151671506242108], time_used: 3
+2023-11-24 17:49:03 [INFO ] total_steps: 248, episode reward: [1.379607575148419], time_used: 3
+2023-11-24 17:49:04 [INFO ] total_steps: 278, episode reward: [2.5964637235571644], time_used: 3
+2023-11-24 17:49:04 [INFO ] total_steps: 308, episode reward: [0.683820142887666], time_used: 4
+2023-11-24 17:49:05 [INFO ] total_steps: 338, episode reward: [0.0], time_used: 4
+2023-11-24 17:49:05 [INFO ] total_steps: 368, episode reward: [4.834365191101789], time_used: 5
+2023-11-24 17:49:05 [INFO ] total_steps: 398, episode reward: [0.9538889999640459], time_used: 5
+2023-11-24 17:49:06 [INFO ] total_steps: 428, episode reward: [0.0], time_used: 6
+2023-11-24 17:49:06 [INFO ] total_steps: 458, episode reward: [4.093787812461164], time_used: 6
+2023-11-24 17:49:07 [INFO ] total_steps: 488, episode reward: [1.614678322413651], time_used: 6
+2023-11-24 17:49:09 [INFO ] total_steps: 518, episode reward: [4.948315448729327], time_used: 9
+2023-11-24 17:49:10 [INFO ] total_steps: 548, episode reward: [0.0], time_used: 9
+2023-11-24 17:49:10 [INFO ] total_steps: 578, episode reward: [1.373072472909435], time_used: 10
+2023-11-24 17:49:11 [INFO ] total_steps: 608, episode reward: [4.863385857921618], time_used: 11
+2023-11-24 17:49:12 [INFO ] total_steps: 638, episode reward: [2.915499651654246], time_used: 11
+2023-11-24 17:49:12 [INFO ] total_steps: 668, episode reward: [3.119132840015512], time_used: 12
+2023-11-24 17:49:13 [INFO ] total_steps: 698, episode reward: [6.623409385101727], time_used: 12
+2023-11-24 17:49:13 [INFO ] total_steps: 728, episode reward: [4.555817342851093], time_used: 13
+2023-11-24 17:49:14 [INFO ] total_steps: 758, episode reward: [5.007601582613042], time_used: 14
+2023-11-24 17:49:15 [INFO ] total_steps: 788, episode reward: [3.7843566719057855], time_used: 14
+2023-11-24 17:49:15 [INFO ] total_steps: 818, episode reward: [0.4496724126993381], time_used: 15
+2023-11-24 17:49:16 [INFO ] total_steps: 848, episode reward: [5.375448438650955], time_used: 16
+2023-11-24 17:49:17 [INFO ] total_steps: 878, episode reward: [0.7183346926505272], time_used: 16
+2023-11-24 17:49:17 [INFO ] total_steps: 908, episode reward: [0.4215889586742759], time_used: 17
+2023-11-24 17:49:18 [INFO ] total_steps: 938, episode reward: [0.0], time_used: 18
+2023-11-24 17:49:19 [INFO ] total_steps: 968, episode reward: [4.951803839088518], time_used: 18
+2023-11-24 17:49:19 [INFO ] total_steps: 998, episode reward: [1.5325999433200357], time_used: 19
