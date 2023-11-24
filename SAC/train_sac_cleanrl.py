@@ -1,10 +1,11 @@
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/sac/#sac_continuous_actionpy
-import argparse
+
 import os
 import random
 import time
 from distutils.util import strtobool
 import gymnasium
+import argparse
 
 import gymnasium as gym
 import numpy as np
@@ -14,7 +15,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from stable_baselines3.common.buffers import ReplayBuffer
 from torch.utils.tensorboard import SummaryWriter
-from logger import get_logger
+from utils import get_logger
 
 
 def parse_args():

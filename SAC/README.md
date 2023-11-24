@@ -30,11 +30,3 @@
 ### 开始优化
 
 还有的话我觉得基本可以跑起来（环路）的话可以开始优化了，直接先做priority ReplayBuffer，这个你去找冯奕哲，看他能不能接受，我是觉得再搞一个PPO没有太大的意义。
-
-  ----re: 
-  1. em我确实也觉得意义不是很大，但这样的话在做priority replayBuffer之前是不是就不能调参🤔，还是说我们先调一版，如果冯奕哲同意做replayBuffer的话，等他做好了我们接着再调一下
-  2. 网络结构的话我又看了一下，SAC.learn的部分好像确实需要改一下，我先加输入输出，加完以后看看怎么对着clean调整一下。
-  3. 另外，SAC.py 中的 actor 的 forward 函数，相当于把 cleanRL 中的forward 和 get_action 揉进一个函数里面了，但我觉得不需要改，因为 cleanRL 的主函数中本身就只用到了actor.get_action()，而 get_action 又调用 actor(x)，所以只是写法不一样，结构是一样的(note : 在继承了nn.module 以后，调用actor(x) 就相当于 actor.forward(x)，DQN里面遇到过。)
-  4. 如果你有发现其它奇怪的地方可以等你醒了告诉我
-  5. 输入输出和args我之后加上
-     
