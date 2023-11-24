@@ -65,7 +65,7 @@ def parse_args():
         help="the discount factor gamma")
     parser.add_argument("--tau", type=float, default=0.005,
         help="target smoothing coefficient (default: 0.005)")
-    parser.add_argument("--batchsize", type=int, default=256,
+    parser.add_argument("--batchsize", type=int, default=16,
         help="the batch size of sample from the reply memory")
     parser.add_argument("--learning-starts", type=int, default=500,
         help="timestep to start learning")

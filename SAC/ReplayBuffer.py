@@ -2,8 +2,8 @@ import torch
 import numpy as np
 
 class ReplayBuffer(object):
-    def __init__(self, state_dim, action_dim):
-        self.max_size = int(1e6)
+    def __init__(self, state_dim, action_dim, args):
+        self.max_size = args.buffer_size
         self.count = 0
         self.size = 0
         self.s = np.zeros((self.max_size, state_dim))
