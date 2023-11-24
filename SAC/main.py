@@ -118,4 +118,9 @@ if __name__ == '__main__':
 
             '''8. If s'is terminal,then d is true, we jump out of the "while" and reset environment state.'''
     
-    agent.save("./models/racetrack")
+    model_path = os.path.join(out_dir, "models_racetrack/")
+    if not os.path.exists(model_path):
+        os.mkdir(model_path)
+    agent.save(model_path)
+    with open (os.path.join(out_dir, "hyperparameters.txt"), 'w') as f: 
+        f.write(str(args))

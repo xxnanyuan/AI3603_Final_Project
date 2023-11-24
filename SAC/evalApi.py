@@ -15,6 +15,8 @@ log_dir = os.path.join(out_dir, 'train.log')
 logger = get_logger(log_dir, name="log", level="info")
 args = parse_args()
 
+model_dir = "train/2023-11-24 21-00-19/models_racetrack/"
+
 agent = False
 def getAction(env, obs):
     global agent
@@ -23,13 +25,15 @@ def getAction(env, obs):
         action_dim = env.action_space.shape[0]
         max_action = float(env.action_space.high[0])
         agent = SAC(state_dim, action_dim, max_action, args, logger)
-        agent.load(f"./models/racetrack")
+        agent.load(model_dir)
     obs = obs.flatten()
     action = agent.choose_action(obs)
     return action
 
 
 env = gym.make("racetrack-v0", render_mode="rgb_array")
+env = RecordVideo(env, video_folder= out_dir + "/videos", episode_trigger=lambda e: True)
+env.unwrapped.set_record_video_wrapper(env)
 
 env.configure({
     "observation": {
@@ -69,7 +73,7 @@ if __name__ == '__main__':
     # env.unwrapped.set_record_video_wrapper(env)
     env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
 
-    for videos in range(10):
+    for videos in range(1):
         done = truncated = False
         obs, info = env.reset()
         while not (done or truncated):
