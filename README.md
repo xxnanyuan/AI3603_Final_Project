@@ -1,141 +1,33 @@
-# AI3603_Project
+# 进度
 
-Group Members: [Gonghu Shang](https://github.com/xxnanyuan)
+## 关于训练慢
 
-## 1 Introduction
+其实只有highway这个子任务比较慢，十字路口和环岛都挺快的，环岛一分钟能跑4000个step。然后你问问助教能不能修改reward函数，把车限定在马路上，就是在训练的时候修改，eval的时候还是用原来的。感觉这样会快很多。
 
-This is final project for AI3603 in SJTU.
+## 封装
 
-In the [highwayEnv](https://github.com/Farama-Foundation/HighwayEnv) simulation environment, utilizing reinforcement learning and similar methods, drive the vehicle as swiftly as possible while ensuring safety to accomplish specified tasks such as tracking and parking. Our objective within highway, intersection, and race track scenarios is to move as quickly as possible while maintaining safety. The task in parking scenarios involves parking the vehicle at specific locations.
+简单的封装已经好了，但是我感觉这个原本的文件就有些问题，后面可能还要参照你的那份改一改。
 
-## 2 Environment
+- main.py 主模块
+- makeEnv.py 建造环境
+- ReplayBuffer.py 缓存
+- SAC.py SAC类和两个网络，store和load我已经加进去了，我还没试过能不能用
+- evalApi.py 和eval的交互，一样我还没试过能不能用，那个不同目录下的文件调用好像要写__init__.py，你查一下
 
-We use [conda](https://anaconda.org/anaconda/conda) to make and manage python environments.
+## 接下来要做的
 
-1. `conda create -n highway python=3.8`
-2. `conda activate highway`
-3. `pip install -r requirements.txt`
+### 继续封装
 
-## 3 Structure
+- √ parse_args，加可以调整的超参     
+- √ 网络优化，感觉初始的那个网络怪怪的，可以按你的调一下
+- √ 打印信息和存储tensorboard
+- 对gpu的支持，初始版本是不支持gpu的，我看网上说gpu和cpu跑得差不多快是因为没有优化，可以部分任务使用cpu部分使用gpu，这样会比较快。但我感觉这个其实无关紧要，可以留到后面。
+- √ model save load and evaluate
 
-``` shell_tree
-.
-.
-├── README.md
-├── TD3 \\TD3 algorithm
-│   ├── TD3v0
-│   │   ├── DDPG.py
-│   │   ├── OurDDPG.py
-│   │   ├── README.md
-│   │   ├── TD3.py
-│   │   ├── main.py
-│   │   ├── run_experiments.sh
-│   │   └── utils.py
-│   ├── TD3v1
-│   │   ├── TD3.py
-│   │   ├── huggingface.py
-│   │   └── td3_eval.py
-│   └── TD3v2
-│       └── TD3.py
-├── demo \\demo by sb3
-│   ├── SAC_sb3_parking_demo.py
-│   ├── SAC_sb3_racetrack_demo.py
-│   ├── TD3_sb3_parking_demo.py
-│   └── TD3_sb3_racetrack_demo.py
-├── eval
-│   ├── eval_highway.py
-│   ├── eval_intersection.py
-│   ├── eval_parking.py
-│   └── eval_racetrack.py
-├── requirements.txt
-└── train.py
-```
+### 改reward
 
-## 4 Running Guide
+你可以去问问助教能不能改reward，可以的话看看怎么改，重写类的话上网搜应该能搜到，还有一种思路是可以看"on_road"这个状态，判断车在不在路上，不在的话直接给一个大的惩罚。从而push车一直在路上。但是这样的话泛化性可能就不够了。
 
-## 5 Result
+### 开始优化
 
-## 6 Collaboration
-
-This part is a record of project collaboration and is not important; you can skip it.
-
-### 6.1 Understand the Highway Environment (by Gonghu Shang)
-
-We only focus on obs, action and reward function.
-
-#### obs
-
-For Occupancy grid observation(highway, intersection, and race track), variable obs is a three-dimensional array of 8\*11\*11. 8 stand for the number of feature of the obs.
-`"features": ["presence", "on_road","x", "y", "vx", "vy", "cos_h", "sin_h"]`
-11*11 is the size of view grid of our car. The feature of our car is located in the center and other is nearby vehicle's feature.
-
-For Kinematics observation(parking), obs is a dict like：
-
-``` shell
-OrderedDict([
-('observation', array([0, 0, 0, 0, 0, 1])),
-('achieved_goal', array([0, 0, 0, 0, 0, 1])), 
-('desired_goal', array([0, 0, 0, 0, 0, 1]))])
-```
-
-Each array stand for the features of the observation.
-`"features": ["x", "y", "vx", "vy", "cos_h", "sin_h"]`
-
-#### action
-
-The action is config by:
-
-```python
-"action": {
-    "type": "ContinuousAction",
-    "longitudinal": True,
-    "lateral": True,
-},
-```
-
-Variable action is a array: [longitudinal speed, lateral speed]. Both speed is among [-1,1]. I don't firgure out how they realy stand for. But for an rl project, this is not important.
-If we set longitudinal to false(for race track). Variable action is a array: [lateral speed].
-
-### Choose Algorithm
-
-The task has a continous action space. So there are only 4 algorithm we can use.
-
-- A2C/A3C
-- DDPG
-- TD3
-- SAC
-- PPO
-
-The given file train.py is PPO algorithm. But as if it has some errors.
-
-I decide to choose TD3 for a test. TD3 is original implementation. TD3v1 and Td3v2 is other implementations I found. But another problem is some of them are using gym instead of gymnasium in the code.
-
-## 7 Resources
-
-### Web
-
-1. [highwayEnv document](http://highway-env.farama.org/)
-2. [highwayEnv code](https://github.com/Farama-Foundation/HighwayEnv)
-3. [clearn rl -- a Deep Reinforcement Learning library](https://github.com/vwxyzjn/cleanrl/tree/master)
-4. [highway by RainbowDQN -- A improved dqn algorithm](https://github.com/jackyoung96/RainbowDQN_highway) [^1]
-5. [深度强化学习算法对比](https://zhuanlan.zhihu.com/p/342919579?utm_psn=1708635222873296896)
-
-### Paper
-
-## 8 Problem and Solution
-
-Here are some problem we meet in the project.
-
-### 8.1 X server error
-
-Problem: 'GLIBCXX_3.4.30' not found for librosa in conda virtual environment
-
-Solution: [STFW](https://bcourses.berkeley.edu/courses/1478831/pages/glibcxx-missing), we know this problem is caused by the version of GLIBCXX. The version of GLIBCXX in conda is 3.4.29, by the system require 3.4.30. So just search the available version in local environment and make a sysbolic link.
-
-``` shell
-cd FoldofVirtualEnvironmetLib
-mv libstdc++.so.6 libstdc++.so.6.old
-ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6 libstdc++.so.6
-```
-
-[^1]:Based on a discrete action space, but ours is continuous.
+还有的话我觉得基本可以跑起来（环路）的话可以开始优化了，直接先做priority ReplayBuffer，这个你去找冯奕哲，看他能不能接受，我是觉得再搞一个PPO没有太大的意义。

@@ -1,6 +1,6 @@
 import gymnasium as gym
 
-def makeEnv(env_name, seed):
+def makeEnv(env_name):
     env = gym.make(env_name, render_mode="rgb_array")
     if env_name == "highway-v0":
         env.configure({
@@ -100,6 +100,4 @@ def makeEnv(env_name, seed):
         })
     env.reset()
     env = gym.wrappers.RecordEpisodeStatistics(env)
-    env.action_space.seed(seed)
-    env.observation_space.seed(seed)
     return env

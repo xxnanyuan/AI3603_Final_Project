@@ -1,0 +1,70 @@
+from SAC import SAC
+import numpy as np
+import gymnasium as gym
+from gymnasium.wrappers import RecordVideo
+import highway_env
+from utils import get_logger, parse_args
+import time
+import os
+from makeEnv import makeEnv
+
+env_name = "parking-v0"
+times = time.strftime('%Y-%m-%d %H-%M-%S', time.localtime())
+out_dir = f"myeval/{env_name}/{times}"
+if not os.path.exists(f"myeval/{env_name}"):
+    os.mkdir(f"myeval/{env_name}")
+if not os.path.exists(out_dir):
+    os.mkdir(out_dir)
+log_dir = os.path.join(out_dir, 'train.log')
+logger = get_logger(log_dir, name="log", level="info")
+args = parse_args()
+
+model_time = "2023-11-26 01-24-31"
+model_path = f"train/{env_name}/{model_time}/models/"
+
+agent = False
+def getAction(env, obs):
+    global agent
+    if agent == False:
+        state_dim = 12
+        # state_dim = np.prod(env.observation_space.shape)
+        action_dim = env.action_space.shape[0]
+        max_action = float(env.action_space.high[0])
+        agent = SAC(state_dim, action_dim, max_action, args, logger)
+        agent.load(model_path)
+    obs = np.append(obs['achieved_goal'],obs['desired_goal']).flatten()
+    action = agent.choose_action(obs)
+    return action
+
+
+if __name__ == '__main__':
+    # Create the environment
+    env = makeEnv(env_name)    
+    obs, info = env.reset()
+    env = RecordVideo(env, video_folder=f"{out_dir}/videos", episode_trigger=lambda e: True)
+    env.unwrapped.set_record_video_wrapper(env)
+    env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
+    success_time = 0
+    for videos in range(100):
+        done = truncated = False
+        obs, info = env.reset()
+        steps = 0
+        total_reward = 0
+        while not (done or truncated):
+            steps += 1
+            # Predict
+            action = getAction(env, obs)
+            # action = [0,0]
+            # Get reward
+            obs, reward, done, truncated, info = env.step(action)
+            # print(reward,obs['achieved_goaldesired_goal'])
+            # if not info["rewards"]["on_road_reward"]:
+            #     done = True
+            total_reward+=reward
+            if info['is_success']:
+                success_time+=1
+            # Render
+            env.render()
+        print(videos,"steps: ", steps, " reward: ", total_reward, "info: ", info['is_success'], "sucess rate: ",success_time/100)
+    env.close()
+    

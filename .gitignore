@@ -1,5 +1,5 @@
-SAC/log/*
-SAC/eval/*
-SAC/runs/*
-SAC/train/*
-SAC/__pycache__
+log/*
+myeval/*
+train/*
+!train/*/*/models
+__pycache__

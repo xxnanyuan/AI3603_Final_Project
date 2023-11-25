@@ -57,19 +57,19 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=1,
         help="seed of the experiment")
-    parser.add_argument("--total-timesteps", type=int, default=1e4,
+    parser.add_argument("--total-timesteps", type=int, default=1e5,
         help="total timesteps of the experiments")
-    parser.add_argument("--buffer-size", type=int, default=int(5e3),
+    parser.add_argument("--buffer-size", type=int, default=int(1e4),
         help="the replay memory buffer size")
     parser.add_argument("--gamma", type=float, default=0.99,
         help="the discount factor gamma")
     parser.add_argument("--tau", type=float, default=0.005,
         help="target smoothing coefficient (default: 0.005)")
-    parser.add_argument("--batchsize", type=int, default=64,
+    parser.add_argument("--batchsize", type=int, default=256,
         help="the batch size of sample from the reply memory")
-    parser.add_argument("--learning-starts", type=int, default=0,
+    parser.add_argument("--learning-starts", type=int, default=10000,
         help="timestep to start learning")
-    parser.add_argument("--policy-lr", type=float, default=3e-4,
+    parser.add_argument("--policy-lr", type=float, default=1e-3,
         help="the learning rate of the policy network optimizer")
     parser.add_argument("--q-lr", type=float, default=1e-3,
         help="the learning rate of the Q network network optimizer")

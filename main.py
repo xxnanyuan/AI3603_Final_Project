@@ -15,28 +15,29 @@ def adjustReward(rewards):
     reward = rewards["lane_centering_reward"]+1-rewards["collision_reward"]+rewards["on_road_reward"]
     return reward
 
-
-
 if __name__ == '__main__':
 
+    env_name = "parking-v0"
     times = time.strftime('%Y-%m-%d %H-%M-%S', time.localtime())
-    out_dir = f"train/{times}"
+    out_dir = f"train/{env_name}/{times}"
+    if not os.path.exists(f"train/{env_name}"):
+        os.mkdir(f"train/{env_name}")
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
     log_dir = os.path.join(out_dir, 'train.log')
     logger = get_logger(log_dir, name="log", level="info")
     args = parse_args()
 
-    env_name = "racetrack-v0"
     number = 1
     # seed = 0
-    env = makeEnv(env_name, args.seed)
+    env = makeEnv(env_name)
     # Set random seed
+    env.action_space.seed(args.seed)
+    env.observation_space.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
-
     # state_dim = np.prod(env.observation_space.shape)
-    state_dim = 200
+    state_dim = 12
     action_dim = env.action_space.shape[0]
     max_action = float(env.action_space.high[0])
 
@@ -64,9 +65,9 @@ if __name__ == '__main__':
     '''3: repeat'''
     while total_steps < max_train_steps:
         '''4. Observe state s'''
-        s,_ = env.reset()
-        s = s[:,3:8,3:8]
-        s = s.flatten()
+        s,infos = env.reset()
+        # s = s[:,3:8,3:8]
+        s = np.append(s['achieved_goal'],s['desired_goal']).flatten()
 
         '''initialize the signals'''
         done = False
@@ -76,11 +77,6 @@ if __name__ == '__main__':
         else:
             d = False
 
-        
-        if total_steps > 0: 
-            ed = time.time()
-            logger.info(f"total_steps: {total_steps}, episode reward: [{total_r}], episode length: [{(total_steps-last_step)}], mean step reward: [{total_r/(total_steps-last_step)}], time_used: {int(ed - st)}")
-            last_step = total_steps
         total_r = 0
 
         while not d:
@@ -98,12 +94,11 @@ if __name__ == '__main__':
             # r+=infos["rewards"]["lane_centering_reward"]
             # if not infos["rewards"]["on_road_reward"]:
             #     done = True
-            # print(r, infos)
+            # r += 20*infos["is_success"]-20*infos["crashed"]
             total_r += r
-            s_ = s_[:,3:8,3:8]
-            if not infos["rewards"]["on_road_reward"]:
-                done = True
-            s_ = s_.flatten()
+            # if not (1 in s_[1][3:8,3:8]):
+            #     done = True
+            s_ = np.append(s_['achieved_goal'],s_['desired_goal']).flatten()
             '''6. observe signal d'''
             if done or truncations:
                 d = True
@@ -126,9 +121,14 @@ if __name__ == '__main__':
 
             '''8. If s'is terminal,then d is true, we jump out of the "while" and reset environment state.'''
             if total_steps%5000 == 0:
-                model_path = os.path.join(out_dir, "models_racetrack/")
+                model_path = os.path.join(out_dir, "models/")
                 if not os.path.exists(model_path):
                     os.mkdir(model_path)
                 agent.save(model_path)
                 with open (os.path.join(out_dir, "hyperparameters.txt"), 'w') as f: 
                     f.write(str(args))
+                    
+        if total_steps > 0: 
+            ed = time.time()
+            logger.info(f"total_steps: {total_steps}, episode reward: [{total_r}], episode length: [{(total_steps-last_step)}], mean step reward: [{total_r/(total_steps-last_step)}], time_used: {int(ed - st)}, success: {infos['is_success']}")
+            last_step = total_steps
