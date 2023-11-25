@@ -12,7 +12,7 @@ import time
 import os
 
 def adjustReward(rewards):
-    reward = 10*rewards["lane_centering_reward"]+rewards["action_reward"]-10*rewards["collision_reward"]+10*rewards["on_road_reward"]
+    reward = rewards["lane_centering_reward"]+1-rewards["collision_reward"]+rewards["on_road_reward"]
     return reward
 
 
@@ -35,7 +35,8 @@ if __name__ == '__main__':
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
 
-    state_dim = np.prod(env.observation_space.shape)
+    # state_dim = np.prod(env.observation_space.shape)
+    state_dim = 200
     action_dim = env.action_space.shape[0]
     max_action = float(env.action_space.high[0])
 
@@ -56,17 +57,20 @@ if __name__ == '__main__':
     # evaluate_num = 0  # Record the number of evaluations
     # evaluate_rewards = []  # Record the rewards during the evaluating
     total_steps = 0  # Record the total steps during the training
+    last_step = 0
     st = time.time()
     total_r = 0
     while total_steps < max_train_steps:
         s,_ = env.reset()
+        s = s[:,3:8,3:8]
         s = s.flatten()
         episode_steps = 0
         done = False
         truncations =False
         if total_steps > 0: 
             ed = time.time()
-            logger.info(f"total_steps: {total_steps}, episode reward: [{total_r}], time_used: {int(ed - st)}")
+            logger.info(f"total_steps: {total_steps}, episode reward: [{total_r}], episode length: [{(total_steps-last_step)}], mean step reward: [{total_r/(total_steps-last_step)}], time_used: {int(ed - st)}")
+            last_step = total_steps
         total_r = 0
         while not (done or truncations):
             episode_steps += 1
@@ -74,12 +78,17 @@ if __name__ == '__main__':
                 a = env.action_space.sample()
             else:
                 a = agent.choose_action(s)
+
             s_, r, done, truncations, infos = env.step(a)
-            r = adjustReward(infos["rewards"])
+            # r = adjustReward(infos["rewards"])
+            # r+=infos["rewards"]["lane_centering_reward"]
+            # if not infos["rewards"]["on_road_reward"]:
+            #     done = True
+            # print(r, infos)
+            total_r += r
+            s_ = s_[:,3:8,3:8]
             if not infos["rewards"]["on_road_reward"]:
                 done = True
-            # print(infos)
-            total_r += r
             s_ = s_.flatten()
             # When dead or win or reaching the max_episode_steps, done will be Ture, we need to distinguish them;
             # dw means dead or win,there is no next state s';
@@ -95,4 +104,5 @@ if __name__ == '__main__':
                 agent.learn(replay_buffer, total_steps=total_steps)
 
             total_steps += 1
-    agent.save("./models/racetrack")
+            if total_steps%5000 == 0:
+                agent.save("./models/racetrack")

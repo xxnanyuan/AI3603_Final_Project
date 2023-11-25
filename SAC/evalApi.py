@@ -19,11 +19,12 @@ agent = False
 def getAction(env, obs):
     global agent
     if agent == False:
-        state_dim = np.prod(env.observation_space.shape)
+        state_dim = 72
         action_dim = env.action_space.shape[0]
         max_action = float(env.action_space.high[0])
         agent = SAC(state_dim, action_dim, max_action, args, logger)
         agent.load(f"./models/racetrack")
+    obs = obs[:,3:8,3:8]
     obs = obs.flatten()
     action = agent.choose_action(obs)
     return action
@@ -67,17 +68,25 @@ if __name__ == '__main__':
 
     # env = RecordVideo(env, video_folder="racetrack/videos", episode_trigger=lambda e: True)
     # env.unwrapped.set_record_video_wrapper(env)
-    env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
+    # env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
 
     for videos in range(10):
         done = truncated = False
         obs, info = env.reset()
+        steps = 0
+        total_reward = 0
         while not (done or truncated):
+            steps += 1
             # Predict
             action = getAction(env, obs)
             # Get reward
             obs, reward, done, truncated, info = env.step(action)
+            # if not info["rewards"]["on_road_reward"]:
+            #     done = True
+            # print(obs[2])
+            total_reward+=reward
             # Render
             env.render()
+        print("steps: ", steps, " reward: ", total_reward)
     env.close()
     
