@@ -87,8 +87,11 @@ class SAC(object):
         else:
             self.alpha = args.alpha
 
+        '''1. Input: initial policy parameters theta, Q-function parameters phi_1, phi_2'''
         self.actor = Actor(state_dim, action_dim, self.hidden_width, max_action)
         self.critic = Critic(state_dim, action_dim, self.hidden_width)
+
+        '''2: Set target parameters equal to main parameters phi_targ1 <- phi_1;  phi_targ2 <- phi_2'''
         self.critic_target = copy.deepcopy(self.critic)
 
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.q_lr)
@@ -100,15 +103,21 @@ class SAC(object):
         return a.data.numpy().flatten()
 
     def learn(self, relay_buffer, total_steps):
-        batch_s, batch_a, batch_r, batch_s_, batch_dw = relay_buffer.sample(self.batch_size)  # Sample a batch
+        '''11. Randomly sample a batch of transitions, B =(s,a, r, s',d) from D'''
+        batch_s, batch_a, batch_r, batch_s_, batch_d = relay_buffer.sample(self.batch_size)  # Sample a batch
 
+        '''12. Compute targets for the Q functions:'''
         with torch.no_grad():
             batch_a_, log_pi_ = self.actor(batch_s_)  # a' from the current policy
             # Compute target Q
             target_Q1, target_Q2 = self.critic_target(batch_s_, batch_a_)
             '''在下一步取了min'''
-            target_Q = batch_r + self.GAMMA * (1 - batch_dw) * (torch.min(target_Q1, target_Q2) - self.alpha * log_pi_)
+            target_Q = batch_r + self.GAMMA * (1 - batch_d) * (torch.min(target_Q1, target_Q2) - self.alpha * log_pi_)
 
+        '''
+        13. Update Q-functions by one step of gradient descent using :
+        critic_loss = F.mse_loss(current_Q1, target_Q) + F.mse_loss(current_Q2, target_Q)
+        '''
         # Compute current Q
         current_Q1, current_Q2 = self.critic(batch_s, batch_a)
         # Compute critic loss
@@ -123,7 +132,12 @@ class SAC(object):
             params.requires_grad = False
 
         # Compute actor loss
-        '''em应该是说每freq次才更新，每次更新都更新freq次，所以是延迟更新，但是更新的次数还是相等的'''
+        '''
+        14. Update policy by one step of gradient ascent using: 
+        actor_loss = (self.alpha * log_pi - Q).mean()
+
+        p.s. and update the alpha if it's asked to do so.
+        '''
         
         if total_steps % self.policy_frequency == 0:
             for _ in range(self.policy_frequency):
@@ -151,8 +165,12 @@ class SAC(object):
         
 
         # Softly update target networks
-        for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-            target_param.data.copy_(self.TAU * param.data + (1 - self.TAU) * target_param.data)
+        '''
+        15. Update target networks with
+        '''
+        if total_steps % self.target_network_frequency == 0:
+            for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+                target_param.data.copy_(self.TAU * param.data + (1 - self.TAU) * target_param.data)
     
     
     def save(self, filename):
