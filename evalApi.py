@@ -19,20 +19,33 @@ log_dir = os.path.join(out_dir, 'train.log')
 logger = get_logger(log_dir, name="log", level="info")
 args = parse_args()
 
-model_time = "2023-11-26 01-24-31"
+model_time = "2023-11-25 13-28-38"
 model_path = f"train/{env_name}/{model_time}/models/"
 
 agent = False
 def getAction(env, obs):
     global agent
     if agent == False:
-        state_dim = 12
-        # state_dim = np.prod(env.observation_space.shape)
+        if env_name == "highway-v0":
+            state_dim = np.prod(env.observation_space.shape)
+        elif env_name == "parking-v0":
+            state_dim = 12
+        elif env_name == "intersection-v0":
+            state_dim = np.prod(env.observation_space.shape)
+        elif env_name == "racetrack-v0":
+            state_dim = np.prod(env.observation_space.shape)
         action_dim = env.action_space.shape[0]
         max_action = float(env.action_space.high[0])
         agent = SAC(state_dim, action_dim, max_action, args, logger)
         agent.load(model_path)
-    obs = np.append(obs['achieved_goal'],obs['desired_goal']).flatten()
+    if env_name == "highway-v0":
+        obs = obs.flatten()
+    elif env_name == "parking-v0":
+        obs = np.append(obs['achieved_goal'],obs['desired_goal']).flatten()
+    elif env_name == "intersection-v0":
+        obs = obs.flatten()
+    elif env_name == "racetrack-v0":
+        obs = obs.flatten()
     action = agent.choose_action(obs)
     return action
 
@@ -41,8 +54,8 @@ if __name__ == '__main__':
     # Create the environment
     env = makeEnv(env_name)    
     obs, info = env.reset()
-    env = RecordVideo(env, video_folder=f"{out_dir}/videos", episode_trigger=lambda e: True)
-    env.unwrapped.set_record_video_wrapper(env)
+    # env = RecordVideo(env, video_folder=f"{out_dir}/videos", episode_trigger=lambda e: True)
+    # env.unwrapped.set_record_video_wrapper(env)
     env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
     success_time = 0
     for videos in range(100):
@@ -53,18 +66,20 @@ if __name__ == '__main__':
         while not (done or truncated):
             steps += 1
             # Predict
-            action = getAction(env, obs)
+            action = getAction(env,obs)
             # action = [0,0]
             # Get reward
             obs, reward, done, truncated, info = env.step(action)
             # print(reward,obs['achieved_goaldesired_goal'])
             # if not info["rewards"]["on_road_reward"]:
             #     done = True
+            # print(info)
             total_reward+=reward
             if info['is_success']:
                 success_time+=1
             # Render
             env.render()
         print(videos,"steps: ", steps, " reward: ", total_reward, "info: ", info['is_success'], "sucess rate: ",success_time/100)
+        # print(videos,"steps: ", steps, " reward: ", total_reward)
     env.close()
     

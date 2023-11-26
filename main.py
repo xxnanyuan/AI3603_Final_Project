@@ -17,7 +17,7 @@ def adjustReward(rewards):
 
 if __name__ == '__main__':
 
-    env_name = "parking-v0"
+    env_name = "highway-v0"
     times = time.strftime('%Y-%m-%d %H-%M-%S', time.localtime())
     out_dir = f"train/{env_name}/{times}"
     if not os.path.exists(f"train/{env_name}"):
@@ -36,8 +36,14 @@ if __name__ == '__main__':
     env.observation_space.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
-    # state_dim = np.prod(env.observation_space.shape)
-    state_dim = 12
+    if env_name == "highway-v0":
+        state_dim = np.prod(env.observation_space.shape)
+    elif env_name == "parking-v0":
+        state_dim = 12
+    elif env_name == "intersection-v0":
+        state_dim = np.prod(env.observation_space.shape)
+    elif env_name == "racetrack-v0":
+        state_dim = np.prod(env.observation_space.shape)
     action_dim = env.action_space.shape[0]
     max_action = float(env.action_space.high[0])
 
@@ -67,7 +73,14 @@ if __name__ == '__main__':
         '''4. Observe state s'''
         s,infos = env.reset()
         # s = s[:,3:8,3:8]
-        s = np.append(s['achieved_goal'],s['desired_goal']).flatten()
+        if env_name == "highway-v0":
+            s = s.flatten()
+        elif env_name == "parking-v0":
+            s = np.append(s['achieved_goal'],s['desired_goal']).flatten()
+        elif env_name == "intersection-v0":
+            s = s.flatten()
+        elif env_name == "racetrack-v0":
+            s = s.flatten()
 
         '''initialize the signals'''
         done = False
@@ -90,15 +103,24 @@ if __name__ == '__main__':
             6. Observe next state s', reward r, and done signal d to indicate whether s' is terminal
             '''    
             s_, r, done, truncations, infos = env.step(a)
-            # r = adjustReward(infos["rewards"])
-            # r+=infos["rewards"]["lane_centering_reward"]
-            # if not infos["rewards"]["on_road_reward"]:
-            #     done = True
-            # r += 20*infos["is_success"]-20*infos["crashed"]
             total_r += r
             # if not (1 in s_[1][3:8,3:8]):
             #     done = True
-            s_ = np.append(s_['achieved_goal'],s_['desired_goal']).flatten()
+            if env_name == "highway-v0":
+                if not infos["rewards"]["on_road_reward"]:
+                    done = True
+                s_ = s_.flatten()
+            elif env_name == "parking-v0":
+                s_ = np.append(s_['achieved_goal'],s_['desired_goal']).flatten()
+            elif env_name == "intersection-v0":
+                if not infos["rewards"]["on_road_reward"]:
+                    done = True
+                s_ = s_.flatten()
+            elif env_name == "racetrack-v0":
+                if not infos["rewards"]["on_road_reward"]:
+                    done = True
+                s_ = s_.flatten()
+            
             '''6. observe signal d'''
             if done or truncations:
                 d = True
@@ -120,7 +142,7 @@ if __name__ == '__main__':
             total_steps += 1
 
             '''8. If s'is terminal,then d is true, we jump out of the "while" and reset environment state.'''
-            if total_steps%5000 == 0:
+            if total_steps%3000 == 0:
                 model_path = os.path.join(out_dir, "models/")
                 if not os.path.exists(model_path):
                     os.mkdir(model_path)
@@ -130,5 +152,8 @@ if __name__ == '__main__':
                     
         if total_steps > 0: 
             ed = time.time()
-            logger.info(f"total_steps: {total_steps}, episode reward: [{total_r}], episode length: [{(total_steps-last_step)}], mean step reward: [{total_r/(total_steps-last_step)}], time_used: {int(ed - st)}, success: {infos['is_success']}")
+            if env_name == "parking-v0":
+                logger.info(f"total_steps: {total_steps}, episode reward: [{total_r}], episode length: [{(total_steps-last_step)}], mean step reward: [{total_r/(total_steps-last_step)}], time_used: {int(ed - st)}, success: {infos['is_success']}")
+            else:
+                logger.info(f"total_steps: {total_steps}, episode reward: [{total_r}], episode length: [{(total_steps-last_step)}], mean step reward: [{total_r/(total_steps-last_step)}], time_used: {int(ed - st)}")
             last_step = total_steps

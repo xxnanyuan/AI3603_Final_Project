@@ -1,5 +1,5 @@
 log/*
 myeval/*
+!*.tar.gz
 train/*
-!train/*/*/models
 __pycache__
