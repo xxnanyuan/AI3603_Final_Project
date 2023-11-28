@@ -2,4 +2,8 @@ log/*
 myeval/*
 !*.tar.gz
 train/*
+mulEnv/*
+cyj/*
+sgh/*
+fyz/*
 __pycache__
