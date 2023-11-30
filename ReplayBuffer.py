@@ -18,8 +18,8 @@ class ReplayBuffer(object):
         self.r[self.count] = r
         self.s_[self.count] = s_
         self.dw[self.count] = dw
-        self.count = (self.count + 1) % self.max_size  # When the 'count' reaches max_size, it will be reset to 0.
-        self.size = min(self.size + 1, self.max_size)  # Record the number of  transitions
+        self.count = (self.count + 1) % self.max_size 
+        self.size = min(self.size + 1, self.max_size) 
 
     def sample(self, batch_size):
         index = np.random.choice(self.size, size=batch_size)  # Randomly sampling

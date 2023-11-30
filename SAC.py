@@ -82,7 +82,7 @@ class SAC(object):
             self.target_entropy = -action_dim
             # We learn log_alpha instead of alpha to ensure that alpha=exp(log_alpha)>0
             self.log_alpha = torch.zeros(1, requires_grad=True)
-            self.alpha = self.log_alpha.exp()
+            self.alpha = self.log_alpha.exp().item()
             self.alpha_optimizer = torch.optim.Adam([self.log_alpha], lr=self.q_lr)
         else:
             self.alpha = args.alpha

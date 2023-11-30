@@ -57,7 +57,11 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=1,
         help="seed of the experiment")
-    parser.add_argument("--total-timesteps", type=int, default=1e5,
+    parser.add_argument("--env-name", type=str, default="highway-v0",
+        help="env-name of the experiment")
+    parser.add_argument("--model-time", type=str, default="",
+        help="time of the eval model")
+    parser.add_argument("--total-timesteps", type=int, default=5e4,
         help="total timesteps of the experiments")
     parser.add_argument("--buffer-size", type=int, default=int(1e4),
         help="the replay memory buffer size")
@@ -67,7 +71,7 @@ def parse_args():
         help="target smoothing coefficient (default: 0.005)")
     parser.add_argument("--batchsize", type=int, default=256,
         help="the batch size of sample from the reply memory")
-    parser.add_argument("--learning-starts", type=int, default=10000,
+    parser.add_argument("--learning-starts", type=int, default=1000,
         help="timestep to start learning")
     parser.add_argument("--policy-lr", type=float, default=1e-3,
         help="the learning rate of the policy network optimizer")
