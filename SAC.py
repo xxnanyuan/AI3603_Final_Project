@@ -34,7 +34,8 @@ class Actor(nn.Module):
         else:
             log_pi = None
 
-        a = self.max_action * torch.tanh(a)  # Use tanh to compress the unbounded Gaussian distribution into a bounded action interval.
+        for i in range(len(a)):
+            a[i] = torch.tensor(self.max_action) * torch.tanh(a[i])
 
         return a, log_pi
 
@@ -65,7 +66,7 @@ class Critic(nn.Module):  # According to (s,a), directly calculate Q(s,a)
     
     
 class SAC(object):
-    def __init__(self, state_dim, action_dim, max_action, args, logger):
+    def __init__(self, state_dim, action_dim, max_action, args):
         self.max_action = max_action
         self.hidden_width = 256  # The number of neurons in hidden layers of the neural network
         self.batch_size = args.batchsize  # batch size
@@ -76,7 +77,6 @@ class SAC(object):
         self.adaptive_alpha = args.adaptive_alpha  # Whether to automatically learn the temperature alpha
         self.policy_frequency = args.policy_frequency
         self.target_network_frequency = args.target_network_frequency
-        self.logger = logger
         if self.adaptive_alpha:
             # Target Entropy = −dim(A) (e.g. , -6 for HalfCheetah-v2) as given in the paper
             self.target_entropy = -action_dim

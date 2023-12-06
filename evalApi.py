@@ -37,9 +37,11 @@ def getAction(env, obs):
             state_dim = np.prod(env.observation_space.shape)
         elif env_name == "racetrack-v0":
             state_dim = np.prod(env.observation_space.shape)
+            # state_dim = 18
         action_dim = env.action_space.shape[0]
         max_action = float(env.action_space.high[0])
-        agent = SAC(state_dim, action_dim, max_action, args, logger)
+        agent = SAC(state_dim, action_dim, max_action, args)
+        # max_action = [1,0.1]
         agent.load(model_path)
     if env_name == "highway-v0":
         # change obs size
@@ -51,6 +53,7 @@ def getAction(env, obs):
         obs = obs.flatten()
     elif env_name == "racetrack-v0":
         obs = obs.flatten()
+        # obs = obs[0:2,4:7,4:7].flatten()
     action = agent.choose_action(obs)
     return action
 
@@ -66,7 +69,7 @@ if __name__ == '__main__':
     # env.unwrapped.set_record_video_wrapper(env)
     # env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
     success_time = 0
-    for videos in range(5):
+    for videos in range(100):
         done = truncated = False
         obs, info = env.reset()
         steps = 0
@@ -76,8 +79,13 @@ if __name__ == '__main__':
             # Predict
             action = getAction(env,obs)
             # action = env.action_space.sample()
+            # if steps == 1:
+            #     action = [0,0.13]
+            # elif steps == 2:
+            #     action = [0,-0.13]
+            # else:
+            #     action = [0,0]
             # action = [1,0]
-            # action = [0,0]
             # Get reward
             obs, reward, done, truncated, info = env.step(action)
             # print(reward,obs['achieved_goaldesired_goal'])
@@ -87,10 +95,9 @@ if __name__ == '__main__':
             # print(obs[0])
             # if obs[6][5][5] <= 0 or (sum(obs[0][2:9,2:9])<=1):
             #     reward = 0
-            # print(info["rewards"])
             total_reward+=reward
-            # if info['is_success']:
-            #     success_time+=1
+            if info['is_success']:
+                success_time+=1
             # if done or truncated:
             #     d = True
             # else:
@@ -98,7 +105,7 @@ if __name__ == '__main__':
             # if d:
             #     print(info)
             # Render
-            env.render()
+            # env.render()
         print(videos,"steps: ", steps, " reward: ", total_reward, "sucess time: ",success_time)
 
     env.close()

@@ -27,7 +27,7 @@ if __name__ == '__main__':
     args = parse_args()
 
     # init for make env
-    num_envs = 10
+    num_envs = 60
     env = gym.vector.AsyncVectorEnv(
         [makeEnv(env_name,i+3) for i in range(num_envs)]
     )    
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     Set target parameters equal to main parameters phi_targ1 <- phi_1;  phi_targ2 <- phi_2
     (1 and 2 in SAC)
     '''
-    agent = SAC(state_dim, action_dim, max_action, args, logger)
+    agent = SAC(state_dim, action_dim, max_action, args)
     replay_buffer = ReplayBuffer(state_dim, action_dim, args) 
 
     # Build a tensorboard
@@ -146,7 +146,7 @@ if __name__ == '__main__':
         total_steps += num_envs
         
         # store model
-        if total_steps%2000 == 0:
+        if total_steps%num_envs*10 == 0:
             model_path = os.path.join(out_dir, "models/")
             if not os.path.exists(model_path):
                 os.mkdir(model_path)

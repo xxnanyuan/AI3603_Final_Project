@@ -29,7 +29,7 @@ if __name__ == '__main__':
     
 
     # init for make env
-    num_envs = 12
+    num_envs = 60
     env = gym.vector.AsyncVectorEnv(
         [makeEnv(env_name,i+3) for i in range(num_envs)]
     )    
@@ -41,9 +41,10 @@ if __name__ == '__main__':
     # set state_dim,action_dim,max_action for four environment
     state_dim = np.prod(env.single_observation_space.shape)
     # change the size of obs
-    # state_dim = 200
+    # state_dim = 72
     action_dim = env.single_action_space.shape[0]
-    max_action = float(env.single_action_space.high[0])
+    max_action = env.single_action_space.high[:]
+    # max_action = [1,0.13]
 
     logger.info("env={}".format(env_name))
     logger.info("state_dim={}".format(state_dim))
@@ -55,7 +56,7 @@ if __name__ == '__main__':
     Set target parameters equal to main parameters phi_targ1 <- phi_1;  phi_targ2 <- phi_2
     (1 and 2 in SAC)
     '''
-    agent = SAC(state_dim, action_dim, max_action, args, logger)
+    agent = SAC(state_dim, action_dim, max_action, args)
     replay_buffer = ReplayBuffer(state_dim, action_dim, args) 
 
     # Build a tensorboard
@@ -94,7 +95,7 @@ if __name__ == '__main__':
             '''select action'''
             action = np.array([agent.choose_action(obs[i].flatten()) for i in range(num_envs)])
             # change the size of obs
-            # action = np.array([agent.choose_action(obs[i][:,3:8,3:8].flatten()) for i in range(num_envs)])
+            # action = np.array([agent.choose_action(obs[i][:][:,3:8,3:8].flatten()) for i in range(num_envs)])
         '''
         Step a in the enviroment
         Observe next state s', reward r, and done signal d to indicate whether s' is terminal
@@ -104,10 +105,14 @@ if __name__ == '__main__':
         # now we process for each sub env
         for i in range(num_envs):
             # change reward
-            if (next_obs[i][6][5][5] <= 0) or (np.sum(obs[i][0])<=1) or (not info["rewards"][i]["on_road_reward"]):
-                reward[i] = 0
-                onTheWay[i] = False 
-
+            # reward[i]=0.5-0.5*info["rewards"][i]["collision_reward"]+0.1*info["rewards"][i]["right_lane_reward"]+0.4*info["rewards"][i]["high_speed_reward"]
+            # reward[i]*=info["rewards"][i]["on_road_reward"]
+            # if (np.sum(next_obs[i][0])<=1):
+            #     reward[i] = 0
+            #     onTheWay[i] = False 
+            # if (not info["rewards"][i]["on_road_reward"]):
+            #     reward[i] = 0
+            #     onTheWay[i] = False 
             # update episode reward
             episode_reward[i] = episode_reward[i] + reward[i]
             if not (done[i] or truncations[i]):
@@ -133,8 +138,9 @@ if __name__ == '__main__':
                 
                 # add scalar to tensorboard here
                 writer.add_scalar("charts/episodic_return", episode_reward[i], total_steps+i)
-                writer.add_scalar("charts/episodic_length", episode_len[i], total_steps+i)     
-                writer.add_scalar("charts/alpha", agent.alpha, total_steps+i)       
+                writer.add_scalar("charts/episodic_length", episode_len[i], total_steps+i)  
+                if total_steps >= random_steps:   
+                    writer.add_scalar("charts/alpha", agent.alpha, total_steps+i)       
                 # init for new episode  
                 episode_len[i]=0
                 episode_reward[i]=0 
@@ -150,25 +156,30 @@ if __name__ == '__main__':
         total_steps += num_envs
 
         # we update max episode length to delay the reset action
-        if max(episode_len)==max_episode_length and np.sum(onTheWay)>(num_envs/2):
-            max_episode_length+=1
-        
+        # if np.mean(episode_reward)>max_episode_length*0.8 and np.max(episode_len)==(max_episode_length):
+        #     print(episode_reward,np.mean(episode_reward),np.mean(episode_len))
+        #     max_episode_length+=1
+        # max_episode_length = max(max_episode_length,max(episode_len))
         #  if the car isn't work as you like(store in onTheWay), all environment will reset here  
-        if (False in onTheWay) and max(episode_len)>=max_episode_length:
-            obs, info = env.reset()
-            for i in range(num_envs):
-                if episode_len[i] != 0:
-                    logger.info(f"[episode info] env_id: {i}, total_steps: {total_steps}, episode lenght: {episode_len[i]}, episode reward: [{episode_reward[i]}], time_used: {int(time.time() - st)}")
-                    # writer.add_scalar("charts/SPS", int(total_steps / (time.time() - st)), total_steps+i)
-                    writer.add_scalar("charts/episodic_return", episode_reward[i], total_steps+i)
-                    writer.add_scalar("charts/episodic_length", episode_len[i], total_steps+i)     
-                    writer.add_scalar("charts/alpha", agent.alpha, total_steps+i)       
-                    # add tensorboard here
-                    episode_len[i]=0
-                    episode_reward[i]=0 
+        # if max(episode_len)==max_episode_length:
+        #     print(np.mean(episode_reward),np.mean(episode_len))
+        #     for i in range(num_envs):
+        #         print(i, action[i], info["rewards"][i]["right_lane_reward"], info["rewards"][i]["on_road_reward"], info["rewards"][i]["high_speed_reward"])
+        #     obs, info = env.reset()
+        #     for i in range(num_envs):
+        #         if episode_len[i] != 0:
+        #             logger.info(f"[episode info] env_id: {i}, total_steps: {total_steps}, episode lenght: {episode_len[i]}, episode reward: [{episode_reward[i]}], time_used: {int(time.time() - st)}")
+        #             # writer.add_scalar("charts/SPS", int(total_steps / (time.time() - st)), total_steps+i)
+        #             writer.add_scalar("charts/episodic_return", episode_reward[i], total_steps+i)
+        #             writer.add_scalar("charts/episodic_length", episode_len[i], total_steps+i)     
+        #             if total_steps >= random_steps:   
+        #                 writer.add_scalar("charts/alpha", agent.alpha, total_steps+i)       
+        #             # add tensorboard here
+        #             episode_len[i]=0
+        #             episode_reward[i]=0 
         
         # store model
-        if total_steps%2000 == 0:
+        if total_steps%(num_envs*40) == 0:
             model_path = os.path.join(out_dir, "models/")
             if not os.path.exists(model_path):
                 os.mkdir(model_path)

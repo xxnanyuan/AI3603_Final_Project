@@ -64,7 +64,7 @@ The log file will store in dir "train/".
 To eval the model, specify the env_name and model_time and run:
 
 ```shell
-python train.py --env-name {} --model-time {}
+python evalApi.py --env-name {} --model-time {}
 ```
 
 The log file will store in dir "myeval/".

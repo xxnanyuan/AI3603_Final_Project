@@ -61,7 +61,7 @@ def parse_args():
         help="env-name of the experiment")
     parser.add_argument("--model-time", type=str, default="",
         help="time of the eval model")
-    parser.add_argument("--total-timesteps", type=int, default=5e4,
+    parser.add_argument("--total-timesteps", type=int, default=1e5,
         help="total timesteps of the experiments")
     parser.add_argument("--buffer-size", type=int, default=int(1e4),
         help="the replay memory buffer size")
@@ -71,7 +71,7 @@ def parse_args():
         help="target smoothing coefficient (default: 0.005)")
     parser.add_argument("--batchsize", type=int, default=256,
         help="the batch size of sample from the reply memory")
-    parser.add_argument("--learning-starts", type=int, default=1000,
+    parser.add_argument("--learning-starts", type=int, default=0,
         help="timestep to start learning")
     parser.add_argument("--policy-lr", type=float, default=1e-3,
         help="the learning rate of the policy network optimizer")
@@ -81,9 +81,9 @@ def parse_args():
         help="the frequency of training policy (delayed)")
     parser.add_argument("--target-network-frequency", type=int, default=1, # Denis Yarats' implementation delays this by 2.
         help="the frequency of updates for the target nerworks")
-    parser.add_argument("--alpha", type=float, default=0.2,
+    parser.add_argument("--alpha", type=float, default=0.02,
             help="Entropy regularization coefficient.")
-    parser.add_argument("--adaptive-alpha", type=lambda x:bool(strtobool(x)), default=True, nargs="?", const=True,
+    parser.add_argument("--adaptive-alpha", type=lambda x:bool(strtobool(x)), default=False, nargs="?", const=True,
         help="automatic tuning of the entropy coefficient")
     args = parser.parse_args()
     # fmt: on
