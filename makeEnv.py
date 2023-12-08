@@ -54,6 +54,7 @@ def makeEnv(env_name,seed):
                 "duration": 13,  # [s]
                 "simulation_frequency": 15,  # [Hz]
                 "policy_frequency": 1,  # [Hz]
+                # "manual_control": True,
             })
         elif env_name == "parking-v0":
             env.configure({

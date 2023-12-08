@@ -29,32 +29,32 @@ def getAction(env, obs):
     if agent == False:
         if env_name == "highway-v0":
             state_dim = np.prod(env.observation_space.shape)
-            # change obs size
-            # state_dim = 200
         elif env_name == "parking-v0":
-            state_dim = 12
+            state_dim = 12 
         elif env_name == "intersection-v0":
             state_dim = np.prod(env.observation_space.shape)
         elif env_name == "racetrack-v0":
-            state_dim = np.prod(env.observation_space.shape)
-            # state_dim = 18
+            # state_dim = np.prod(env.observation_space.shape)
+            state_dim = 72
         action_dim = env.action_space.shape[0]
         max_action = float(env.action_space.high[0])
+        max_action = [1,0.2]
+
         agent = SAC(state_dim, action_dim, max_action, args)
-        # max_action = [1,0.1]
         agent.load(model_path)
     if env_name == "highway-v0":
         # change obs size
-        # obs = obs[:,3:8,3:8].flatten()
+        # obs = obs[:,4:7,4:7].flatten()
         obs = obs.flatten()
     elif env_name == "parking-v0":
         obs = np.append(obs['achieved_goal'],obs['desired_goal']).flatten()
     elif env_name == "intersection-v0":
         obs = obs.flatten()
     elif env_name == "racetrack-v0":
+        obs = obs[:,4:7,4:7]
         obs = obs.flatten()
-        # obs = obs[0:2,4:7,4:7].flatten()
-    action = agent.choose_action(obs)
+        
+    action = agent.choose_action(obs,True)
     return action
 
 
@@ -78,17 +78,21 @@ if __name__ == '__main__':
             steps += 1
             # Predict
             action = getAction(env,obs)
-            # action = env.action_space.sample()
-            # if steps == 1:
-            #     action = [0,0.13]
-            # elif steps == 2:
-            #     action = [0,-0.13]
+            # action = [-0.5,0]
+            # if steps < 3:
+            #     action = [0]
+            # elif steps == 4:
+            #     action = [-1]
             # else:
-            #     action = [0,0]
-            # action = [1,0]
+            #     action = [0]
             # Get reward
             obs, reward, done, truncated, info = env.step(action)
-            # print(reward,obs['achieved_goaldesired_goal'])
+            # print(obs[:,4:7,4:7])
+            print(reward)
+            # if (not obs[1][5][5]) or (obs[1][6][6]):
+            #     done = True
+            # if not obs[1][5][5]:
+            #     done = True
             # if not info["rewards"]["on_road_reward"]:
             #     done = True
             # print(obs[2:4,3:8,3:8])
@@ -96,16 +100,8 @@ if __name__ == '__main__':
             # if obs[6][5][5] <= 0 or (sum(obs[0][2:9,2:9])<=1):
             #     reward = 0
             total_reward+=reward
-            if info['is_success']:
-                success_time+=1
-            # if done or truncated:
-            #     d = True
-            # else:
-            #     d = False
-            # if d:
-            #     print(info)
             # Render
-            # env.render()
+            env.render()
         print(videos,"steps: ", steps, " reward: ", total_reward, "sucess time: ",success_time)
 
     env.close()

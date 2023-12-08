@@ -148,6 +148,10 @@ Adjust the reward to 0 if the car don't work as expected.
 
 Reset the environment if the car don't work as expected, such as out of the way and run back.
 
+### 6.6 Algorithm
+
+![SAC](firgure/SAC.svg)
+
 ## 7 Resources
 
 ### Web
@@ -157,6 +161,9 @@ Reset the environment if the car don't work as expected, such as out of the way 
 3. [clearn rl -- a Deep Reinforcement Learning library](https://github.com/vwxyzjn/cleanrl/tree/master)
 4. [highway by RainbowDQN -- A improved dqn algorithm](https://github.com/jackyoung96/RainbowDQN_highway) [^1]
 5. [深度强化学习算法对比](https://zhuanlan.zhihu.com/p/342919579?utm_psn=1708635222873296896)
+6. [SAC介绍](https://zhuanlan.zhihu.com/p/566722896)
+7. [PPO 优化](https://zhuanlan.zhihu.com/p/512327050)
+8. [Drl 算法实现](https://github.com/Lizhi-sjtu/DRL-code-pytorch/blob/f0b32a5ce21af5f8620ee5b0201e284d9b009c24/5.PPO-continuous/training_result.png)
 
 ### Paper
 

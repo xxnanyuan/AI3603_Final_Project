@@ -29,7 +29,7 @@ if __name__ == '__main__':
     
 
     # init for make env
-    num_envs = 1
+    num_envs = 24
     env = gym.vector.AsyncVectorEnv(
         [makeEnv(env_name,i+3) for i in range(num_envs)]
     )    
@@ -43,9 +43,8 @@ if __name__ == '__main__':
     # change the size of obs
     # state_dim = 72
     action_dim = env.single_action_space.shape[0]
-    max_action = env.single_action_space.high[:]
-    # max_action = [1,0.2]
-
+    # max_action = env.single_action_space.high[:]
+    max_action = [1,0.2]
 
     logger.info("env={}".format(env_name))
     logger.info("state_dim={}".format(state_dim))
@@ -76,45 +75,40 @@ if __name__ == '__main__':
     
     # init episode length and reward for log
     episode_len = np.zeros(num_envs)
-    episode_reward = np.zeros(num_envs)   
+    episode_reward = np.zeros(num_envs)    
     
     # the sub env will auto reset when terminal
     # and env.reset() will reset all sub env
     # If you want to reset env for some condition, you only can reset all
     # this will cause some problem
     # so we set max episode length for delay the reset action 
-
+    max_episode_length = 1
+    
     # main loop
     while total_steps < max_train_steps:
-        manualResetSignal = np.full(num_envs,False,dtype=bool) 
+        # onTheWay is whether the car move as you expect
+        manualResetSignal = np.array([True for _ in range(num_envs)])
+        
         if total_steps < random_steps:  # Take the random actions in the beginning for the better exploration
             action = env.action_space.sample()
         else:
             '''select action'''
             action = np.array([agent.choose_action(obs[i].flatten()) for i in range(num_envs)])
             # change the size of obs
-            # action = np.array([agent.choose_action(obs[i][:][:,4:7,4:7].flatten()) for i in range(num_envs)])
+            # action = np.array([agent.choose_action(obs[i][:][:,3:8,3:8].flatten()) for i in range(num_envs)])
         '''
         Step a in the enviroment
         Observe next state s', reward r, and done signal d to indicate whether s' is terminal
         '''    
         next_obs,reward,done,truncations,info = env.step(action)
+        
         # now we process for each sub env
         for i in range(num_envs):
             # change reward
-            # reward[i]=0.8*info["rewards"][i]["high_speed_reward"]+0.1*info["rewards"][i]["right_lane_reward"]+0.1-0.1*info["rewards"][i]["collision_reward"]
-            # print(info["rewards"])
-            # reward[i]=info["rewards"][i]["lane_centering_reward"]-0.4*info["rewards"][i]["action_reward"]-info["rewards"][i]["collision_reward"]
-            # reward[i]=(reward[i]-(-1))/(1-(-1))
-            # reward[i]*=info["rewards"][i]["on_road_reward"]
-            # if (np.sum(next_obs[i][0])<=1):
-            #     reward[i] = 0
-            #     manualResetSignal[i] = True
-            
-            #  or (not ((obs[i][1][5][4] and obs[i][1][5][6]) or (obs[i][1][4][5] and obs[i][1][6][5])))
-            if (not next_obs[i][1][5][5]) or (next_obs[i][1][6][6]):
-                print(next_obs[i][1][4:7,4:7])
-                # 'collision_reward': 0.0, 'high_speed_reward': 1.0, 'arrived_reward': 0.0, 'on_road_reward': 1.0
+            reward[i]=0.8*info["rewards"][i]["high_speed_reward"]+0.1*info["rewards"][i]["right_lane_reward"]+0.1-0.1*info["rewards"][i]["collision_reward"]
+            reward[i]*=info["rewards"][i]["on_road_reward"]
+            if (np.sum(next_obs[i][0])<=1) or (not next_obs[i][1][5][5]):
+                reward[i] = 0
                 manualResetSignal[i] = True
 
 
@@ -125,7 +119,7 @@ if __name__ == '__main__':
                 # store experience in replay buffer 
                 replay_buffer.store(obs[i].flatten(), action[i], reward[i], next_obs[i].flatten(), False)  
                 # change the size of obs
-                # replay_buffer.store(obs[i][:,4:7,4:7].flatten(), action[i], reward[i], next_obs[i][:,4:7,4:7].flatten(), False)
+                # replay_buffer.store(obs[i][:,3:8,3:8].flatten(), action[i], reward[i], next_obs[i][:,3:8,3:8].flatten(), False)
                 episode_len[i]+=1
             else:
                 # if episode terminal, the env will auto reset
@@ -133,13 +127,13 @@ if __name__ == '__main__':
                 # the final obs of this episode is store in info["final_observation"][i]
                 final_obs = (info["final_observation"][i])
                 # store experience in replay buffer 
-                replay_buffer.store(obs[i].flatten(), action[i], reward[i], final_obs.flatten(), done[i])
+                replay_buffer.store(obs[i].flatten(), action[i], reward[i], final_obs.flatten(), True)
                 # change the size of obs
-                # replay_buffer.store(obs[i][:,4:7,4:7].flatten(), action[i], reward[i], final_obs[:,4:7,4:7].flatten(), done[i])
+                # replay_buffer.store(obs[i][:,3:8,3:8].flatten(), action[i], reward[i], final_obs[:,3:8,3:8].flatten(), True)
                 episode_len[i]+=1
                 
                 # log
-                logger.info(f"[episode info] autoReset env_id: {i}, total_steps: {total_steps}, episode lenght: {episode_len[i]}, episode reward: [{episode_reward[i]}], time_used: {int(time.time() - st)}")
+                logger.info(f"[episode info] env_id: {i}, total_steps: {total_steps}, episode lenght: {episode_len[i]}, episode reward: [{episode_reward[i]}], time_used: {int(time.time() - st)}")
                 
                 # add scalar to tensorboard here
                 writer.add_scalar("charts/episodic_return", episode_reward[i], total_steps+i)
@@ -160,7 +154,16 @@ if __name__ == '__main__':
         # update total_steps
         total_steps += num_envs
 
-        if True in manualResetSignal:
+        # we update max episode length to delay the reset action
+        if np.mean(episode_reward)>np.mean(episode_len)*0.6 and np.max(episode_len)==(max_episode_length):
+            max_episode_length+=1
+
+        max_episode_length = max(max_episode_length,max(episode_len))
+        #  if the car isn't work as you like(store in onTheWay), all environment will reset here  
+        if True in manualResetSignal and max(episode_len)==max_episode_length:
+            # print(np.mean(episode_reward),np.mean(episode_len))
+            # for i in range(num_envs):
+            #     print(i, action[i], info["rewards"][i]["right_lane_reward"], info["rewards"][i]["on_road_reward"], info["rewards"][i]["high_speed_reward"])
             obs, info = env.reset()
             for i in range(num_envs):
                 if episode_len[i]!=0:
@@ -174,7 +177,7 @@ if __name__ == '__main__':
                     episode_reward[i]=0 
 
         # store model
-        if total_steps%(num_envs*50) == 0:
+        if total_steps%(500) == 0:
             model_path = os.path.join(out_dir, "models/")
             if not os.path.exists(model_path):
                 os.mkdir(model_path)

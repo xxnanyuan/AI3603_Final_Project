@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # set state_dim,action_dim,max_action for four environment
     state_dim = np.prod(env.single_observation_space.shape)
     # change the size of obs
-    # state_dim = 72
+    state_dim = 72
     action_dim = env.single_action_space.shape[0]
     max_action = env.single_action_space.high[:]
     # max_action = [1,0.2]
@@ -91,9 +91,9 @@ if __name__ == '__main__':
             action = env.action_space.sample()
         else:
             '''select action'''
-            action = np.array([agent.choose_action(obs[i].flatten()) for i in range(num_envs)])
+            # action = np.array([agent.choose_action(obs[i].flatten()) for i in range(num_envs)])
             # change the size of obs
-            # action = np.array([agent.choose_action(obs[i][:][:,4:7,4:7].flatten()) for i in range(num_envs)])
+            action = np.array([agent.choose_action(obs[i][:][:,4:7,4:7].flatten()) for i in range(num_envs)])
         '''
         Step a in the enviroment
         Observe next state s', reward r, and done signal d to indicate whether s' is terminal
@@ -104,17 +104,14 @@ if __name__ == '__main__':
             # change reward
             # reward[i]=0.8*info["rewards"][i]["high_speed_reward"]+0.1*info["rewards"][i]["right_lane_reward"]+0.1-0.1*info["rewards"][i]["collision_reward"]
             # print(info["rewards"])
-            # reward[i]=info["rewards"][i]["lane_centering_reward"]-0.4*info["rewards"][i]["action_reward"]-info["rewards"][i]["collision_reward"]
-            # reward[i]=(reward[i]-(-1))/(1-(-1))
-            # reward[i]*=info["rewards"][i]["on_road_reward"]
+            reward[i]=info["rewards"][i]["lane_centering_reward"]-0.4*info["rewards"][i]["action_reward"]-info["rewards"][i]["collision_reward"]
+            reward[i]=(reward[i]-(-1))/(1-(-1))
+            reward[i]*=info["rewards"][i]["on_road_reward"]
             # if (np.sum(next_obs[i][0])<=1):
             #     reward[i] = 0
             #     manualResetSignal[i] = True
-            
-            #  or (not ((obs[i][1][5][4] and obs[i][1][5][6]) or (obs[i][1][4][5] and obs[i][1][6][5])))
-            if (not next_obs[i][1][5][5]) or (next_obs[i][1][6][6]):
-                print(next_obs[i][1][4:7,4:7])
-                # 'collision_reward': 0.0, 'high_speed_reward': 1.0, 'arrived_reward': 0.0, 'on_road_reward': 1.0
+                
+            if not info["rewards"][i]["on_road_reward"]:
                 manualResetSignal[i] = True
 
 
@@ -123,9 +120,9 @@ if __name__ == '__main__':
             if not (done[i] or truncations[i]):
                 # if episode don't terminal, the sub env continue
                 # store experience in replay buffer 
-                replay_buffer.store(obs[i].flatten(), action[i], reward[i], next_obs[i].flatten(), False)  
+                # replay_buffer.store(obs[i].flatten(), action[i], reward[i], next_obs[i].flatten(), False)  
                 # change the size of obs
-                # replay_buffer.store(obs[i][:,4:7,4:7].flatten(), action[i], reward[i], next_obs[i][:,4:7,4:7].flatten(), False)
+                replay_buffer.store(obs[i][:,4:7,4:7].flatten(), action[i], reward[i], next_obs[i][:,4:7,4:7].flatten(), False)
                 episode_len[i]+=1
             else:
                 # if episode terminal, the env will auto reset
@@ -133,9 +130,9 @@ if __name__ == '__main__':
                 # the final obs of this episode is store in info["final_observation"][i]
                 final_obs = (info["final_observation"][i])
                 # store experience in replay buffer 
-                replay_buffer.store(obs[i].flatten(), action[i], reward[i], final_obs.flatten(), done[i])
+                # replay_buffer.store(obs[i].flatten(), action[i], reward[i], final_obs.flatten(), done[i])
                 # change the size of obs
-                # replay_buffer.store(obs[i][:,4:7,4:7].flatten(), action[i], reward[i], final_obs[:,4:7,4:7].flatten(), done[i])
+                replay_buffer.store(obs[i][:,4:7,4:7].flatten(), action[i], reward[i], final_obs[:,4:7,4:7].flatten(), done[i])
                 episode_len[i]+=1
                 
                 # log
@@ -161,6 +158,7 @@ if __name__ == '__main__':
         total_steps += num_envs
 
         if True in manualResetSignal:
+            print(info["rewards"])
             obs, info = env.reset()
             for i in range(num_envs):
                 if episode_len[i]!=0:
@@ -174,7 +172,7 @@ if __name__ == '__main__':
                     episode_reward[i]=0 
 
         # store model
-        if total_steps%(num_envs*50) == 0:
+        if total_steps%(num_envs*200) == 0:
             model_path = os.path.join(out_dir, "models/")
             if not os.path.exists(model_path):
                 os.mkdir(model_path)

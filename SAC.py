@@ -93,9 +93,9 @@ class SAC(object):
 
         '''2: Set target parameters equal to main parameters phi_targ1 <- phi_1;  phi_targ2 <- phi_2'''
         self.critic_target = copy.deepcopy(self.critic)
-
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.q_lr)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.policy_lr)
+           
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=self.policy_lr)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=self.q_lr)
 
     def choose_action(self, s, deterministic=False):
         s = torch.unsqueeze(torch.tensor(s, dtype=torch.float), 0)
@@ -187,4 +187,3 @@ class SAC(object):
         self.critic_target = copy.deepcopy(self.critic)
         self.actor.load_state_dict(torch.load(filename + "_actor.pth"))
         self.actor_optimizer.load_state_dict(torch.load(filename + "_actor_optimizer.pth"))
-        self.actor_target = copy.deepcopy(self.actor)	
