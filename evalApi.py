@@ -29,6 +29,7 @@ def getAction(env, obs):
     if agent == False:
         if env_name == "highway-v0":
             state_dim = np.prod(env.observation_space.shape)
+            # state_dim = 200
         elif env_name == "parking-v0":
             state_dim = 12 
         elif env_name == "intersection-v0":
@@ -44,14 +45,14 @@ def getAction(env, obs):
         agent.load(model_path)
     if env_name == "highway-v0":
         # change obs size
-        # obs = obs[:,4:7,4:7].flatten()
+        # obs = obs[:,3:8,3:8].flatten()
         obs = obs.flatten()
     elif env_name == "parking-v0":
         obs = np.append(obs['achieved_goal'],obs['desired_goal']).flatten()
     elif env_name == "intersection-v0":
         obs = obs.flatten()
     elif env_name == "racetrack-v0":
-        obs = obs[:,4:7,4:7]
+        # obs = obs[:,4:7,4:7]
         obs = obs.flatten()
         
     action = agent.choose_action(obs,True)
@@ -60,7 +61,7 @@ def getAction(env, obs):
 
 if __name__ == '__main__':
     # Create the environment
-    env = makeEnv(env_name,0)()  
+    env = makeEnv(env_name,0)
     # env = gym.vector.SyncVectorEnv(
     #    [makeEnv(env_name,args.seed+i) for i in range(1)]
     # )  
@@ -78,9 +79,14 @@ if __name__ == '__main__':
             steps += 1
             # Predict
             action = getAction(env,obs)
-            # action = [-0.5,0]
-            # if steps < 3:
-            #     action = [0]
+            # if steps % 4 == 1:
+            #     action = [0,0.2]
+            # elif steps % 4 == 2:
+            #     action = [0,-0.2]
+            # elif steps % 4 == 2:
+            #     action = [0,-0.2]
+            # elif steps % 4 == 0:
+            #     action = [0,0.2]
             # elif steps == 4:
             #     action = [-1]
             # else:
