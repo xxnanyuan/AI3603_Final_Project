@@ -61,11 +61,11 @@ def parse_args():
         help="env-name of the experiment")
     parser.add_argument("--model-time", type=str, default="",
         help="time of the eval model")
-    parser.add_argument("--total-timesteps", type=int, default=2e5,
+    parser.add_argument("--total-timesteps", type=int, default=1e5,
         help="total timesteps of the experiments")
     parser.add_argument("--buffer-size", type=int, default=int(1e4),
         help="the replay memory buffer size")
-    parser.add_argument("--gamma", type=float, default=0.6,
+    parser.add_argument("--gamma", type=float, default=0.99,
         help="the discount factor gamma")
     parser.add_argument("--tau", type=float, default=0.005,
         help="target smoothing coefficient (default: 0.005)")

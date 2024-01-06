@@ -5,25 +5,47 @@ import copy
 from torch.utils.tensorboard import SummaryWriter
 from SAC import SAC
 from ReplayBuffer import ReplayBuffer
-from makeEnv import makeEnv
+from makeVecEnv import makeEnv
 from utils import get_logger, parse_args
 import time
 import os
+
+
+
+def get_new_obs(obs):
+    exist_flag = False
+    for i in range(11):
+        for j in range(11):
+            a = obs[0, i, j]
+            if a == 1 and (i, j) != (5, 5): 
+                # print(f"({i},{j})")
+                exist_flag = True
+                i_copy = i
+                j_copy = j
+    
+
+    obs_onroad = obs[1,3:8,3:8].flatten()
+    # obs_onroad = obs[1,4:7,4:7].flatten()
+    obs_self = obs[:, 5, 5].flatten()
+    if exist_flag:
+        obs_next_car = obs[:, i_copy, j_copy].flatten()
+    else:
+        obs_next_car = np.zeros(obs.shape[0])
+    new_obs = np.concatenate((obs_onroad, obs_self, obs_next_car)).flatten()
+    return new_obs
+
 
 if __name__ == '__main__':
     args = parse_args()
     # log information
     env_name = args.env_name
     # env_name = "intersection-v0"
-    # env_name = "racetrack-v0"
+    env_name = "racetrack-v0"
     times = time.strftime('%Y-%m-%d %H-%M-%S', time.localtime())
-    out_dir = f"train/{env_name}/{times}"
-    if not os.path.exists(f"train"):
-        os.mkdir(f"train")
-    if not os.path.exists(f"train/{env_name}"):
-        os.mkdir(f"train/{env_name}")
+    out_dir = f"train/{env_name}_small_feature/{times}"
+
     if not os.path.exists(out_dir):
-        os.mkdir(out_dir)
+        os.makedirs(out_dir)
     log_dir = os.path.join(out_dir, 'train.log')
     logger = get_logger(log_dir, name="log", level="info")
     
@@ -41,7 +63,10 @@ if __name__ == '__main__':
     # set state_dim,action_dim,max_action for four environment
     state_dim = np.prod(env.single_observation_space.shape)
     # change the size of obs
-    state_dim = 72
+    # state_dim = 72
+    state_dim = 41
+    # state_dim = 200
+    # state_dim = 968
     action_dim = env.single_action_space.shape[0]
     max_action = env.single_action_space.high[:]
     # max_action = [1,0.2]
@@ -51,6 +76,9 @@ if __name__ == '__main__':
     logger.info("state_dim={}".format(state_dim))
     logger.info("action_dim={}".format(action_dim))
     logger.info("max_action={}".format(max_action))
+    # logger.info("the version by cyj, inherited not from fixed version yet the no_final version")
+    logger.info("(5*5)但是给，-100的reward")
+    # logger.info("reward[i] = -0.2 if out road")
 
     '''
     Input: initial policy parameters theta, Q-function parameters phi_1, phi_2, empty replay buffer D
@@ -93,26 +121,47 @@ if __name__ == '__main__':
             '''select action'''
             # action = np.array([agent.choose_action(obs[i].flatten()) for i in range(num_envs)])
             # change the size of obs
-            action = np.array([agent.choose_action(obs[i][:][:,4:7,4:7].flatten()) for i in range(num_envs)])
+            '''"features": ["presence","on_road", "x", "y", "vx", "vy", "cos_h", "sin_h"]'''
+
+            action = np.array([agent.choose_action(get_new_obs(obs[i])) for i in range(num_envs)])
+            # action = np.array([agent.choose_action(obs[i].flatten()) for i in range(num_envs)])
+            # print(obs[0].shape)
+            # print(get_new_obs(obs[0]).shape)
+            # action = np.array([agent.choose_action(obs[i][:][:,4:7,4:7].flatten()) for i in range(num_envs)])
+            # action = np.array([agent.choose_action(obs[i][:][:,3:8,3:8].flatten()) for i in range(num_envs)])
         '''
         Step a in the enviroment
         Observe next state s', reward r, and done signal d to indicate whether s' is terminal
         '''    
         next_obs,reward,done,truncations,info = env.step(action)
+        
         # now we process for each sub env
         for i in range(num_envs):
+            # logger.info(f"new_obs! time_used: {int(time.time() - st)}")
+            # new_obs = obs[i].flatten()
+            # new_next_obs = next_obs[i].flatten()
+            new_obs = get_new_obs(obs[i])
+            new_next_obs = get_new_obs(next_obs[i])
+            # logger.info(f"new_obs! time_used: {int(time.time() - st)}")
             # change reward
             # reward[i]=0.8*info["rewards"][i]["high_speed_reward"]+0.1*info["rewards"][i]["right_lane_reward"]+0.1-0.1*info["rewards"][i]["collision_reward"]
-            # print(info["rewards"])
-            reward[i]=info["rewards"][i]["lane_centering_reward"]-0.4*info["rewards"][i]["action_reward"]-info["rewards"][i]["collision_reward"]
-            reward[i]=(reward[i]-(-1))/(1-(-1))
-            reward[i]*=info["rewards"][i]["on_road_reward"]
+            if done[i]:
+                reward[i]=info["final_info"][i]["rewards"]["lane_centering_reward"]-0.4*info["final_info"][i]["rewards"]["action_reward"]-info["final_info"][i]["rewards"]["collision_reward"]
+                reward[i]=(reward[i]-(-1))/(1-(-1))
+                reward[i]*=info["final_info"][i]["rewards"]["on_road_reward"]
+            #     # print(info["final_info"])
+
+            else:
+                reward[i]=info["rewards"][i]["lane_centering_reward"]-0.4*info["rewards"][i]["action_reward"]-info["rewards"][i]["collision_reward"]
+                reward[i]=(reward[i]-(-1))/(1-(-1))
+                reward[i]*=info["rewards"][i]["on_road_reward"]
             # if (np.sum(next_obs[i][0])<=1):
             #     reward[i] = 0
             #     manualResetSignal[i] = True
                 
             if not info["rewards"][i]["on_road_reward"]:
                 manualResetSignal[i] = True
+                reward[i] -= 100
 
 
             # update episode reward
@@ -122,7 +171,9 @@ if __name__ == '__main__':
                 # store experience in replay buffer 
                 # replay_buffer.store(obs[i].flatten(), action[i], reward[i], next_obs[i].flatten(), False)  
                 # change the size of obs
-                replay_buffer.store(obs[i][:,4:7,4:7].flatten(), action[i], reward[i], next_obs[i][:,4:7,4:7].flatten(), False)
+                # action = np.array([agent.choose_action(get_new_obs(obs[i][:])) for i in range(num_envs)])
+                replay_buffer.store(new_obs, action[i], reward[i], new_next_obs, False)
+                # replay_buffer.store(obs[i][:,3:8,3:8].flatten(), action[i], reward[i], next_obs[i][:,3:8,3:8].flatten(), False)
                 episode_len[i]+=1
             else:
                 # if episode terminal, the env will auto reset
@@ -132,7 +183,9 @@ if __name__ == '__main__':
                 # store experience in replay buffer 
                 # replay_buffer.store(obs[i].flatten(), action[i], reward[i], final_obs.flatten(), done[i])
                 # change the size of obs
-                replay_buffer.store(obs[i][:,4:7,4:7].flatten(), action[i], reward[i], final_obs[:,4:7,4:7].flatten(), done[i])
+                replay_buffer.store(new_obs, action[i], reward[i], get_new_obs(final_obs).flatten(), done[i])
+                # replay_buffer.store(new_obs, action[i], reward[i], final_obs.flatten(), done[i])
+                # replay_buffer.store(obs[i][:,3:8,3:8].flatten(), action[i], reward[i], final_obs[i][:,3:8,3:8].flatten(), False)
                 episode_len[i]+=1
                 
                 # log
@@ -158,7 +211,7 @@ if __name__ == '__main__':
         total_steps += num_envs
 
         if True in manualResetSignal:
-            print(info["rewards"])
+            # print(info["rewards"])
             obs, info = env.reset()
             for i in range(num_envs):
                 if episode_len[i]!=0:
@@ -177,5 +230,6 @@ if __name__ == '__main__':
             if not os.path.exists(model_path):
                 os.mkdir(model_path)
             agent.save(model_path)
+            logger.info(f"save model at step {total_steps}")
             with open (os.path.join(out_dir, "hyperparameters.txt"), 'w') as f: 
                 f.write(str(args))

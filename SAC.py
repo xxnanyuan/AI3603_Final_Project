@@ -66,27 +66,30 @@ class Critic(nn.Module):  # According to (s,a), directly calculate Q(s,a)
     
     
 class SAC(object):
-    def __init__(self, state_dim, action_dim, max_action, args):
+    def __init__(self, state_dim, action_dim, max_action, args=None):
         self.max_action = max_action
         self.hidden_width = 256  # The number of neurons in hidden layers of the neural network
-        self.batch_size = args.batchsize  # batch size
-        self.GAMMA = args.gamma  # discount factor
-        self.TAU = args.tau  # Softly update the target network
-        self.q_lr = args.q_lr  # learning rate
-        self.policy_lr = args.policy_lr
-        self.adaptive_alpha = args.adaptive_alpha  # Whether to automatically learn the temperature alpha
-        self.policy_frequency = args.policy_frequency
-        self.target_network_frequency = args.target_network_frequency
-        if self.adaptive_alpha:
-            # Target Entropy = −dim(A) (e.g. , -6 for HalfCheetah-v2) as given in the paper
-            self.target_entropy = -action_dim
-            # We learn log_alpha instead of alpha to ensure that alpha=exp(log_alpha)>0
-            self.log_alpha = torch.zeros(1, requires_grad=True)
-            self.alpha = self.log_alpha.exp().item()
-            self.alpha_optimizer = torch.optim.Adam([self.log_alpha], lr=self.q_lr)
+        if args:
+            self.batch_size = args.batchsize  # batch size
+            self.GAMMA = args.gamma  # discount factor
+            self.TAU = args.tau  # Softly update the target network
+            self.q_lr = args.q_lr  # learning rate
+            self.policy_lr = args.policy_lr
+            self.adaptive_alpha = args.adaptive_alpha  # Whether to automatically learn the temperature alpha
+            self.policy_frequency = args.policy_frequency
+            self.target_network_frequency = args.target_network_frequency
+            if self.adaptive_alpha:
+                # Target Entropy = −dim(A) (e.g. , -6 for HalfCheetah-v2) as given in the paper
+                self.target_entropy = -action_dim
+                # We learn log_alpha instead of alpha to ensure that alpha=exp(log_alpha)>0
+                self.log_alpha = torch.zeros(1, requires_grad=True)
+                self.alpha = self.log_alpha.exp().item()
+                self.alpha_optimizer = torch.optim.Adam([self.log_alpha], lr=self.q_lr)
+            else:
+                self.alpha = args.alpha
         else:
-            self.alpha = args.alpha
-
+            self.policy_lr = 0
+            self.q_lr = 0
         '''1. Input: initial policy parameters theta, Q-function parameters phi_1, phi_2'''
         self.actor = Actor(state_dim, action_dim, self.hidden_width, max_action)
         self.critic = Critic(state_dim, action_dim, self.hidden_width)

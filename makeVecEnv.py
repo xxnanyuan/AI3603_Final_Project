@@ -8,7 +8,7 @@ def makeEnv(env_name,seed):
                 "observation": {
                     "type": "OccupancyGrid",
                     "vehicles_count": 15,
-                    "features": ["presence", "on_road", "x", "y", "vx", "vy", "cos_h", "sin_h"],
+                    "features": ["presence", "on_road","x", "y", "vx", "vy", "cos_h", "sin_h"],
                     "features_range": {
                         "x": [-100, 100],
                         "y": [-100, 100],
@@ -28,6 +28,8 @@ def makeEnv(env_name,seed):
                 "duration": 40,  # [s]
                 "simulation_frequency": 15,  # [Hz]
                 "policy_frequency": 1,  # [Hz]
+                "normalize_reward": False,
+                "offroad_terminal": True,
             })
         elif env_name == "intersection-v0":
             env.configure({
@@ -54,7 +56,8 @@ def makeEnv(env_name,seed):
                 "duration": 13,  # [s]
                 "simulation_frequency": 15,  # [Hz]
                 "policy_frequency": 1,  # [Hz]
-                # "manual_control": True,
+                "normalize_reward": True,
+                "offroad_terminal": True,
             })
         elif env_name == "parking-v0":
             env.configure({
@@ -99,6 +102,7 @@ def makeEnv(env_name,seed):
                 "duration": 30,  # [s]
                 "simulation_frequency": 15,  # [Hz]
                 "policy_frequency": 1,  # [Hz]
+                "offroad_terminal":True,
             })
         env.reset()
         env = gym.wrappers.RecordEpisodeStatistics(env)

@@ -6,6 +6,7 @@ from utils import get_logger, parse_args
 import time
 import os
 from makeEnv import makeEnv
+from collections import deque
 
 args = parse_args()
 env_name = args.env_name
@@ -29,18 +30,17 @@ def getAction(env, obs):
     if agent == False:
         if env_name == "highway-v0":
             state_dim = np.prod(env.observation_space.shape)
-            # state_dim = 200
+            state_dim = 31
         elif env_name == "parking-v0":
             state_dim = 12 
         elif env_name == "intersection-v0":
             state_dim = np.prod(env.observation_space.shape)
         elif env_name == "racetrack-v0":
             # state_dim = np.prod(env.observation_space.shape)
-            state_dim = 72
+            state_dim = 34
         action_dim = env.action_space.shape[0]
         max_action = float(env.action_space.high[0])
         max_action = [1,0.2]
-
         agent = SAC(state_dim, action_dim, max_action, args)
         agent.load(model_path)
     if env_name == "highway-v0":
@@ -58,7 +58,60 @@ def getAction(env, obs):
     action = agent.choose_action(obs,True)
     return action
 
+def changeobs2(obs):
+    newobs = [obs[6][5][5],obs[7][5][5]]
+    for i in range(3,8):
+        newobs.append(obs[1][i][5])
+    
+    newobs.extend([0,0,0,0,0])
+            
+    for i in range(3,8):
+        if not obs[1][i][5]:
+            newobs[i+4]=-1
+            newobs.extend([-1,-1,-1,-1])
+        flag = False
+        for j in range(5,11):
+            if i == 5 and j==5:
+                continue
+            if obs[0][i][j]:
+                newobs.extend([obs[2][i][j],obs[3][i][j],obs[4][i][j],obs[5][i][j]])
+                newobs[i+4]=1
+                flag = True
+                break
+        if not flag:
+            newobs.extend([0,0,0,0])
+            
+    return np.array(newobs)
 
+def changeobs(obs):
+    newobs = [obs[6][5][5],obs[7][5][5]]
+    
+    for i in range(3,8):
+        newobs.append(obs[1][i][5])
+            
+    for i in range(4,7):
+        flag = False
+        for j in range(5,11):
+            if i == 5 and j==5:
+                continue
+            if obs[0][i][j]:
+                newobs.extend([obs[2][i][j],obs[3][i][j],obs[4][i][j],obs[5][i][j]])
+                flag = True
+                break
+        if not flag:
+            newobs.extend([0,0,0,0])
+
+    for i in range(4,7):
+        flag = False
+        for j in range(4,3,-1):
+            if obs[0][i][j]:
+                newobs.extend([obs[2][i][j],obs[3][i][j],obs[4][i][j],obs[5][i][j]])
+                flag = True
+                break
+        if not flag:
+            newobs.extend([0,0,0,0])
+            
+    return np.array(newobs)
 if __name__ == '__main__':
     # Create the environment
     env = makeEnv(env_name,0)
@@ -70,6 +123,8 @@ if __name__ == '__main__':
     # env.unwrapped.set_record_video_wrapper(env)
     # env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
     success_time = 0
+    total_rewards = []
+    epi_steps = []
     for videos in range(100):
         done = truncated = False
         obs, info = env.reset()
@@ -78,37 +133,26 @@ if __name__ == '__main__':
         while not (done or truncated):
             steps += 1
             # Predict
-            action = getAction(env,obs)
-            # if steps % 4 == 1:
-            #     action = [0,0.2]
-            # elif steps % 4 == 2:
-            #     action = [0,-0.2]
-            # elif steps % 4 == 2:
-            #     action = [0,-0.2]
-            # elif steps % 4 == 0:
-            #     action = [0,0.2]
-            # elif steps == 4:
-            #     action = [-1]
-            # else:
-            #     action = [0]
+            action = getAction(env,changeobs(obs))
+            # action = getAction(env,obs)
+            # action = [1,0]
             # Get reward
             obs, reward, done, truncated, info = env.step(action)
-            # print(obs[:,4:7,4:7])
-            print(reward)
-            # if (not obs[1][5][5]) or (obs[1][6][6]):
-            #     done = True
-            # if not obs[1][5][5]:
-            #     done = True
-            # if not info["rewards"]["on_road_reward"]:
-            #     done = True
-            # print(obs[2:4,3:8,3:8])
-            # print(obs[0])
-            # if obs[6][5][5] <= 0 or (sum(obs[0][2:9,2:9])<=1):
-            #     reward = 0
+            if done:
+                print(changeobs(last_obs))
+                print(reward,info["rewards"])
+                success_time+=1
+            last_obs=np.copy(obs)
+            
+            # if info["is_success"]:
+            #     success_time+=1
             total_reward+=reward
             # Render
             env.render()
         print(videos,"steps: ", steps, " reward: ", total_reward, "sucess time: ",success_time)
+        total_rewards.append(total_reward)
+        epi_steps.append(steps)
+    print(np.mean(total_rewards),np.mean(epi_steps))
 
     env.close()
     

@@ -5,7 +5,7 @@ import copy
 from torch.utils.tensorboard import SummaryWriter
 from SAC import SAC
 from ReplayBuffer import ReplayBuffer
-from makeEnv import makeEnv
+from makeVecEnv import makeEnv
 from utils import get_logger, parse_args
 import time
 import os
@@ -107,27 +107,25 @@ if __name__ == '__main__':
                 # the final obs of this episode is store in info["final_observation"][i]
                 final_obs = np.append(info["final_observation"][i]['achieved_goal'],info["final_observation"][i]['desired_goal'])
                 # store experience in replay buffer 
-                replay_buffer.store(obs[i].flatten(), action[i], reward[i], final_obs.flatten(), True)
+                replay_buffer.store(obs[i].flatten(), action[i], reward[i], final_obs.flatten(), done[i])
                 episode_len[i]+=1
+                
                 
                 # log
                 logger.info(f"[episode info] env_id: {i}, total_steps: {total_steps}, episode lenght: {episode_len[i]}, episode reward: [{episode_reward[i]}], time_used: {int(time.time() - st)}, success: {info['final_info'][i]['is_success']}")
                 
-                # add trace into episode_trace
-                episode_trace[i].append([obs[i].flatten()[0:6], action[i], reward[i], final_obs.flatten()[0:6], True])
-                
                 # add episode_trace experience to replay buffer
-                for iterm in episode_trace[i]:
-                    new_obs = np.concatenate((iterm[0], final_obs.flatten()[0:6]))
-                    new_action = iterm[1]
-                    new_reward = -np.power(np.dot(np.abs(iterm[3] - final_obs.flatten()[0:6]),np.array([1, 0.3, 0, 0, 0.02, 0.02]),),0.5)
-                    new_next_obs = np.concatenate((iterm[3], final_obs.flatten()[0:6]))
-                    new_done = iterm[4]
-                    replay_buffer.store(new_obs, new_action, new_reward, new_next_obs, new_done)
+                if not info['final_info'][i]['is_success']:
+                    for iterm in episode_trace[i]:
+                        new_obs = np.concatenate((iterm[0], obs[i].flatten()[0:6]))
+                        new_action = iterm[1]
+                        new_reward = -np.power(np.dot(np.abs(iterm[3] - obs[i].flatten()[0:6]),np.array([1, 0.3, 0, 0, 0.02, 0.02]),),0.5)
+                        new_next_obs = np.concatenate((iterm[3], obs[i].flatten()[0:6]))
+                        new_done = iterm[4]
+                        replay_buffer.store(new_obs, new_action, new_reward, new_next_obs, new_done)
                 episode_trace[i] = []
                 
                 # add scalar to tensorboard here
-                writer.add_scalar("charts/SPS", int(total_steps / (time.time() - st)), total_steps)
                 writer.add_scalar("charts/episodic_return", episode_reward[i], total_steps)
                 writer.add_scalar("charts/episodic_length", episode_len[i], total_steps)
                 writer.add_scalar("charts/alpha", agent.alpha, total_steps)   
