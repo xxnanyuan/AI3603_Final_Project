@@ -20,7 +20,9 @@ class RaceTrack_v2(Wrapper):
     
 
 env = gym.make("racetrack-v0", render_mode="rgb_array")
-
+# env = RecordVideo(env, video_folder=f"videos/racetrack", episode_trigger=lambda e: True)
+# env.unwrapped.set_record_video_wrapper(env)
+# env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
 env.configure({
     "observation": {
         "type": "OccupancyGrid",
@@ -93,13 +95,13 @@ def eval_racetrack(num_runs,save_path = None):
         done = truncated = False
         obs, info = env.reset()
         while not (done or truncated):
-            # env.render()
             # Predict
             action = act_inference(obs)
             # Get reward
             obs, reward, done, truncated, info = env.step(action)
             ep_ret += reward
             ep_len += 1
+            # env.render()
         list_ep_ret.append(ep_ret)
         list_ep_len.append(ep_len)
     eval_results['ep_ret'] = np.array(list_ep_ret) 

@@ -4,7 +4,9 @@ import numpy as np
 import os 
 from models.SAC import SAC
 env = gym.make("highway-v0",render_mode="rgb_array")
-
+# env = RecordVideo(env, video_folder=f"videos/highway", episode_trigger=lambda e: True)
+# env.unwrapped.set_record_video_wrapper(env)
+# env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
 env.configure({
     "observation": {
         "type": "OccupancyGrid",
@@ -33,9 +35,7 @@ env.configure({
     "offroad_terminal": True,
 })
 env.reset()
-# env = RecordVideo(env, video_folder=f"highway/videos", episode_trigger=lambda e: True)
-# env.unwrapped.set_record_video_wrapper(env)
-# env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
+
 
 def load_act_inference():
     #! Load your own act_inference
@@ -98,10 +98,10 @@ def eval_highway(num_runs,save_path = None):
             obs, reward, done, truncated, info = env.step(action)
             ep_ret += reward
             ep_len += 1
-            env.render()
+            # env.render()
         list_ep_ret.append(ep_ret)
         list_ep_len.append(ep_len)
-        print(ep_ret,ep_len)
+        # print(ep_ret,ep_len)
     eval_results['ep_ret'] = np.array(list_ep_ret) 
     eval_results['ep_len'] = np.array(list_ep_len) 
 

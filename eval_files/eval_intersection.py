@@ -5,8 +5,9 @@ import os
 from models.SAC import SAC
 
 env = gym.make("intersection-v0", render_mode="rgb_array")
-env = RecordVideo(env, video_folder="intersection/videos", episode_trigger=lambda e: True)
-env.unwrapped.set_record_video_wrapper(env)
+# env = RecordVideo(env, video_folder=f"videos/intersection/", episode_trigger=lambda e: True)
+# env.unwrapped.set_record_video_wrapper(env)
+# env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
 env.configure({
     "observation": {
         "type": "OccupancyGrid",
@@ -73,7 +74,7 @@ def eval_intersection(num_runs,save_path = None):
             action = act_inference(obs)
             # Get reward
             obs, reward, done, truncated, info = env.step(action)
-            env.render()
+            # env.render()
             ep_ret += reward
             ep_len += 1
         list_ep_ret.append(ep_ret)

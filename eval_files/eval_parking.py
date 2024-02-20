@@ -5,6 +5,9 @@ import os
 from models.SAC import SAC
 
 env = gym.make("parking-v0", render_mode="rgb_array")
+# env = RecordVideo(env, video_folder=f"videos/parking", episode_trigger=lambda e: True)
+# env.unwrapped.set_record_video_wrapper(env)
+# env.configure({"simulation_frequency": 15})  # Higher FPS for rendering
 env.configure({
     "observation": {
         "type": "KinematicsGoal",

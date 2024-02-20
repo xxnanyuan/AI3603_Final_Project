@@ -1,12 +1,13 @@
-# AI3603_Project
-
-Group Members: [Gonghu Shang](https://github.com/xxnanyuan)
+# AI3603_Final_Project: Autonomous Driving Simulation Experiment
 
 ## 1 Introduction
 
 This is final project for AI3603 in SJTU.
 
-In the [highwayEnv](https://github.com/Farama-Foundation/HighwayEnv) simulation environment, utilizing reinforcement learning and similar methods, drive the vehicle as swiftly as possible while ensuring safety to accomplish specified tasks such as tracking and parking. Our objective within highway, intersection, and race track scenarios is to move as quickly as possible while maintaining safety. The task in parking scenarios involves parking the vehicle at specific locations.
+In this project, we run autonomous driving simulation exper-
+iment. Our task is implement reinforcement learning to control
+the vehicle move as fast as possible while ensuring safety to
+accomplish specified tasks such as tracking and parking.
 
 ## 2 Environment
 
@@ -16,162 +17,79 @@ We use [conda](https://anaconda.org/anaconda/conda) to make and manage python en
 2. `conda activate highway`
 3. `pip install -r requirements.txt`
 
-## 3 Structure
+## 3 Code Structure
 
 ``` shell_tree
 .
+├── AI3603_2023_Project_1__Autonomous_Driving_Simulation_Experiment_Report.pdf
 ├── README.md
 ├── ReplayBuffer.py
 ├── SAC.py
-├── eval/
-│   ├── eval_intersection.py
-│   ├── eval_parking.py
-│   └── eval_racetrack.py
-├── myeval/ # dir to store eval log file
-├── train/  # dir to store train log file
-├── evalApi.py
-├── makeEnv.py
+├── WCSAC.py
+├── eval_files/
+├── firgure/
+├── makeVecEnv.py
+├── otherFailAttempt
 ├── requirements.txt
-├── train.py
+├── runHighway.sh
+├── runIntersection.sh
+├── runParking.sh
+├── runRaceTrack_wcsac.sh
+├── runRacetrack.sh
+├── train/
+├── trainHighway.py
+├── trainIntersection.py
+├── trainIntersectionTurnRight.py
 ├── trainParking.py
-└── utils.py
+├── trainRaceTrack_wcsac.py
+├── trainRacetrack.py
+├── utils.py
+└── utils_wcsac.py
 ```
 
 ## 4 Running Guide
 
 ### 4.1 Train
 
-There are many difference between parking env and others, so I spilt them to two file.
-
-You can specify args in utils.
-
-To train parking, run:
+To train the model, run:
 
 ```shell
-python trainParking.py
+bash runIntersection.sh
+bash runHighway.sh
+bash runParking.sh
+bash runRaceTrach.sh
 ```
 
-To train others, specifying the env name in the args and run:
+You could specify detail hyper-parameters for algorithms and training in shell script. The default value is in `utils.py`.
 
-```shell
-python train.py
-```
-
-The log file will store in dir "train/".
+The training result will store in dir "train/".
 
 ### 4.2 Eval
 
-To eval the model, specify the env_name and model_time and run:
+We give an example here. You have train a model and the model is stored in `train/highway-v0/2023-12-22 22-59-11/`. Firstly move the model to `eval_files/models/highway/`.
 
 ```shell
-python evalApi.py --env-name {} --model-time {}
+cp -r train/highway-v0/2023-12-22 22-59-11/ eval_files/models/highway/
 ```
 
-The log file will store in dir "myeval/".
+Then change the dir to eval_files and run:
+
+```shell
+cd eval_files/
+python eval_highway.py
+```
+
+To show the video during eval, uncomment line 101 in `eval_highway.py`. To record the video, uncomment line 7~9 in `eval_highway.py`.
 
 ## 5 Result
 
-## 6 Collaboration
+Our best model with hyper-parameters is store in `eval_file/`. See the video in [eval_files/videos/](eval_files/videos/).
 
-This part is a record of project collaboration and is not important; you can skip it.
-
-### 6.1 Understand the Highway Environment
-
-We only focus on obs, action and reward function.
-
-#### obs
-
-For Occupancy grid observation(highway, intersection, and race track), variable obs is a three-dimensional array of 8\*11\*11. 8 stand for the number of feature of the obs.
-`"features": ["presence", "on_road","x", "y", "vx", "vy", "cos_h", "sin_h"]`
-11*11 is the size of view grid of our car. The feature of our car is located in the center and other is nearby vehicle's feature.
-
-For Kinematics observation(parking), obs is a dict like：
-
-``` shell
-OrderedDict([
-('observation', array([0, 0, 0, 0, 0, 1])),
-('achieved_goal', array([0, 0, 0, 0, 0, 1])), 
-('desired_goal', array([0, 0, 0, 0, 0, 1]))])
-```
-
-Each array stand for the features of the observation.
-`"features": ["x", "y", "vx", "vy", "cos_h", "sin_h"]`
-
-#### action
-
-The action is config by:
-
-```python
-"action": {
-    "type": "ContinuousAction",
-    "longitudinal": True,
-    "lateral": True,
-},
-```
-
-Variable action is a array: [longitudinal speed, lateral speed]. Both speed is among [-1,1]. I don't firgure out how they realy stand for. But for an rl project, this is not important.
-If we set longitudinal to false(for race track). Variable action is a array: [lateral speed].
-
-### 6.2 Choose Algorithm
-
-The task has a continous action space. So there are only 4 algorithm we can use.
-
-- A2C/A3C
-- DDPG
-- TD3
-- SAC
-- PPO
-
-The given file train.py is PPO algorithm. But as if it has some errors.
-
-> We dicide to choose SAC for four env.
-
-### 6.3 Code a Working SAC
-
-We [SAC-continuous](https://github.com/Lizhi-sjtu/DRL-code-pytorch/blob/f0b32a5ce21af5f8620ee5b0201e284d9b009c24/8.SAC/SAC-continuous.py) and [cleanrl SAC](https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/sac_continuous_action.py)
-
-### 6.4 Make Vector Environment
-
-Todo
-
-### 6.5 Attempts to Improve the Result
-
-#### 6.5.1 Adjust the Size of Obs
-
-We adjust the size of obs for highway, intersection and racetrack. This work very well for racetrack.
-
-#### 6.5.2 Adjust the reward
-
-Adjust the reward to 0 if the car don't work as expected.
-
-#### 6.5.3 Reset the Environment
-
-Reset the environment if the car don't work as expected, such as out of the way and run back.
-
-### 6.6 Algorithm
-
-![SAC](firgure/SAC.svg)
-
-## 7 Resources
-
-### Web
-
-1. [highwayEnv document](http://highway-env.farama.org/)
-2. [highwayEnv code](https://github.com/Farama-Foundation/HighwayEnv)
-3. [clearn rl -- a Deep Reinforcement Learning library](https://github.com/vwxyzjn/cleanrl/tree/master)
-4. [highway by RainbowDQN -- A improved dqn algorithm](https://github.com/jackyoung96/RainbowDQN_highway) [^1]
-5. [深度强化学习算法对比](https://zhuanlan.zhihu.com/p/342919579?utm_psn=1708635222873296896)
-6. [SAC介绍](https://zhuanlan.zhihu.com/p/566722896)
-7. [PPO 优化](https://zhuanlan.zhihu.com/p/512327050)
-8. [Drl 算法实现](https://github.com/Lizhi-sjtu/DRL-code-pytorch/blob/f0b32a5ce21af5f8620ee5b0201e284d9b009c24/5.PPO-continuous/training_result.png)
-
-### Paper
-
-## 8 Problem and Solution
+## 6 Problem and Solution
 
 Here are some problem we meet in the project.
 
-### 8.1 X server error
+### 6.1 X server error
 
 Problem: 'GLIBCXX_3.4.30' not found for librosa in conda virtual environment
 
@@ -182,5 +100,3 @@ cd FoldofVirtualEnvironmetLib
 mv libstdc++.so.6 libstdc++.so.6.old
 ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6 libstdc++.so.6
 ```
-
-[^1]:Based on a discrete action space, but ours is continuous.
